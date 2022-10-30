@@ -1,6 +1,6 @@
 import '../styles/globals.css'
 import type { AppProps } from 'next/app'
-
+import 'moment/locale/zh-cn'
 import 'antd/dist/antd.css'
 import {ReactElement, ReactNode} from "react";
 import {NextPage} from "next";

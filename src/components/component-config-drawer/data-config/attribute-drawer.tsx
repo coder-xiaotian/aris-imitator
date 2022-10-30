@@ -14,6 +14,8 @@ import {ColumnInfo, TableData} from "../../../apis/metaInfo";
 type AttributeDrawerProps = {
   category: 'dimension' | 'measure' | undefined
   onClose: () => void
+  onSelect: (col: ColumnInfo) => void
+  attrMenus: AttrMenu[]
 }
 type AttrMenu = {
   type: string
@@ -21,29 +23,7 @@ type AttrMenu = {
   subTitle: string
   children: ColumnInfo[]
 }
-export default ({category, onClose}: AttributeDrawerProps) => {
-  const {metaData} = useContext(DashBoardContext)
-  const [menus, setMenus] = useState<AttrMenu[]>([])
-  useEffect(() => {
-    if (!metaData) return
-
-    function getMenus(tableData: TableData, prevTitles: string[] = [], menuList: any[] = []) {
-      menuList.push({
-        type: tableData.tableInfo.type,
-        title: tableData.tableInfo.name,
-        subTitle: prevTitles.join('/'),
-        children: tableData.columns.filter(col => !col.isInternal)
-      })
-      for(let item of tableData.children) {
-        getMenus(item, [...prevTitles, tableData.tableInfo.name], menuList)
-      }
-
-      return menuList
-    }
-    setMenus(getMenus(metaData.rootTable))
-  }, [metaData])
-  console.log(metaData, menus)
-
+export default ({category, attrMenus, onClose, onSelect}: AttributeDrawerProps) => {
   return (
     <div className={classNames('absolute top-0 left-0 z-0 -translate-x-full bg-gray-100' +
       ' w-[340px] h-full bg-white shadow-md', {
@@ -55,14 +35,14 @@ export default ({category, onClose}: AttributeDrawerProps) => {
       </div>
       <div className='overflow-auto h-full'>
         <div>
-          {menus.map(menu => <Menu key={menu.title} item={menu}/>)}
+          {attrMenus.map(menu => <Menu key={menu.title} item={menu} onClick={onSelect}/>)}
         </div>
       </div>
     </div>
   )
 }
 
-function Menu({item}: {item: AttrMenu}) {
+function Menu({item, onClick}: {item: AttrMenu, onClick: (item: ColumnInfo) => void}) {
   const fieldIconMap: Record<string, ReactElement> = {
     'TEXT': <FieldStringOutlined/>,
     'LONG': <FieldNumberOutlined/>,
@@ -85,7 +65,9 @@ function Menu({item}: {item: AttrMenu}) {
       <ul>
         {item.children.map(child => (
           <li className="cursor-pointer flex items-center pl-8 py-2 hover:bg-slate-200 transition-all"
-              key={child.key}>
+              key={child.key}
+              onClick={() => onClick(child)}
+          >
             {fieldIconMap[child.type]}
             <span className='inline-block ml-2'>{child.description}</span>
           </li>

@@ -1,4 +1,4 @@
-import {Switch} from "antd";
+import {Spin, Switch} from "antd";
 import {useRequest} from "ahooks";
 import {AnalysisTabInfo} from "../../apis/typing";
 import request from "@/utils/client-request";
@@ -8,29 +8,34 @@ import classNames from "classnames";
 import {MetaData} from "../../apis/metaInfo";
 
 export const DashBoardContext = createContext<{
-  isEditing: boolean
+  isEditMode: boolean
   metaData: MetaData | undefined
 }>({} as any)
 export default (page: ReactElement) => {
   const router = useRouter()
   const {aid, tab} = router.query
-  const {data: tabs = []} = useRequest<AnalysisTabInfo[], []>(() => request.get(`/api/projects/ky_1/analyses/${aid}/tabs`), {
+  const {data: tabs = [], loading: loadingTabs} = useRequest<AnalysisTabInfo[], []>(() => request.get(`/api/projects/ky_1/analyses/${aid}/tabs`), {
     ready: Boolean(aid),
     onSuccess(data) {
       router.push(`/analyses/${aid}?tab=${data?.[0].tabKey}`)
     }
   })
-  const {data: metaData} = useRequest<MetaData, []>(() => request.get("/api/dataSets/data/metaInfo?locale=zh-CN&apiTag=22A0"))
-  const [isEditing, setIsEditing] = useState(true)
+  const {data: metaData, loading: loadingMetaData} = useRequest<MetaData, []>(() => request.get("/api/dataSets/data/metaInfo?locale=zh-CN&apiTag=22A0"), {
+    ready: Boolean(aid)
+  })
+  // dashboard是否正在编辑中
+  const [isEditMode, setIsEditMode] = useState(true)
   const dashboardValue = useMemo(() => ({
-    isEditing,
+    isEditMode,
     metaData
-  }), [isEditing, metaData])
+  }), [isEditMode, metaData])
 
   return (
-    <div className='flex flex-col w-full h-full bg-gray-200'>
+    <Spin wrapperClassName='[&_.ant-spin-container]:flex [&_.ant-spin-container]:flex-col
+                            [&_.ant-spin-container]:h-full w-full h-full bg-gray-200'
+          spinning={loadingTabs || loadingMetaData}>
       <div className='relative z-10 bg-white w-full h-8 text-right shadow'>
-        <Switch checkedChildren='编辑' unCheckedChildren='只读' checked={isEditing} onChange={setIsEditing}></Switch>
+        <Switch checkedChildren='编辑' unCheckedChildren='只读' checked={isEditMode} onChange={setIsEditMode}></Switch>
       </div>
       <div className='grow overflow-auto relative'>
         <DashBoardContext.Provider value={dashboardValue}>
@@ -43,6 +48,6 @@ export default (page: ReactElement) => {
           'border-b-4 border-b-sky-500': tab === item.tabKey
         })} onClick={() => router.push(`/analyses/${aid}?tab=${item.tabKey}`)}>{item.name}</li>)}
       </ul>
-    </div>
+    </Spin>
   )
 }

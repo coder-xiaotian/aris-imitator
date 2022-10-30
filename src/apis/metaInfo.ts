@@ -10,6 +10,7 @@ type Unit = {
   multiplier: number
   suffix: string
 }
+export type ValueType = "LONG" | "TEXT" | "TIMESPAN" | "TIME_RANGE" | "TIME" | "DOUBLE"
 export type ColumnInfo = {
   "usageCategory": 'dimension' | 'measure',
   "key": string,
@@ -25,9 +26,9 @@ export type ColumnInfo = {
     "defaultAggregation": string,
     "hasAggregations": boolean
   },
-  "type": "LONG" | "TEXT" | "TIMESPAN" | "TIME_RANGE" | "TIME" | "DOUBLE",
+  "type": ValueType,
   "flags": string[],
-  "usage": string,
+  "usage": string | "NONE",
   "executionMode": "NORMAL",
   "isCustomCalculation": boolean,
   "isInsightsHook": boolean,

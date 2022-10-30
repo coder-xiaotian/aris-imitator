@@ -7,9 +7,10 @@ import {CopyOutlined, DeleteOutlined, SettingOutlined} from "@ant-design/icons";
 type GridItemProps = {
   disabled: boolean
   onConfig: () => void
+  selected: boolean
 }
 export default forwardRef<HTMLDivElement, CardGridProps & GridItemProps>((props, ref) => {
-  const {className, children, disabled, onConfig, ...otherProps} = props
+  const {className, children, disabled, onConfig, selected, ...otherProps} = props
 
   return (
     <Popover overlayClassName='p-0' style={{padding: '0'}} className='p-0' content={!disabled && (
@@ -25,7 +26,10 @@ export default forwardRef<HTMLDivElement, CardGridProps & GridItemProps>((props,
         </div>
       </div>
     )}>
-      <div className={classNames([className, 'resize relative bg-white rounded shadow'])} ref={ref} {...otherProps}>
+      <div className={classNames([className, 'overflow-hidden relative bg-white rounded shadow '], {
+        'outline outline-2 outline-blue-400': selected,
+        'hover:outline hover:outline-1 hover:outline-gray-900': !selected
+      })} ref={ref} {...otherProps}>
         {children}
       </div>
     </Popover>
