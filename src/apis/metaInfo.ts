@@ -1,3 +1,5 @@
+import {Aggregation} from "./typing";
+
 export enum ColumnType {
   PROCESS = "案例字段",
   ACTIVITY = "活动字段"
@@ -20,10 +22,10 @@ export type ColumnInfo = {
   },
   "aggregationConfig": {
     "aggregations": {
-      "key": string,
+      "key": Aggregation,
       "description": string
     }[],
-    "defaultAggregation": string,
+    "defaultAggregation": Aggregation,
     "hasAggregations": boolean
   },
   "type": ValueType,

@@ -2,7 +2,7 @@ import Label from "@/components/label";
 import {Button, Input, Select, Switch} from "antd";
 import {DeleteOutlined, EditOutlined, PlusOutlined} from "@ant-design/icons";
 import {useContext, useEffect, useState} from "react";
-import {AliasMapping, ChartType, ComponentConfig} from "../../../apis/typing";
+import {Aggregation, AliasMapping, ChartType, ComponentConfig} from "../../../apis/typing";
 import InlineLabel from "@/components/label/inline-label";
 import {DashBoardContext} from "@/components/layouts/dashboard-layout";
 import {ColumnInfo, TableData, ValueType} from "../../../apis/metaInfo";
@@ -10,7 +10,8 @@ import AttributeDrawer from "@/components/component-config-drawer/data-config/at
 import classNames from "classnames";
 import {v4 as uuid} from 'uuid'
 import {ConfigChangeHandler} from "@/pages/analyses/[aid]";
-import AttrItem from "@/components/component-config-drawer/data-config/attr-item";
+import AttrItem, {AggMethodInfo} from "@/components/component-config-drawer/data-config/attr-item";
+import EditAggDrawer from "@/components/component-config-drawer/data-config/edit-agg-drawer";
 
 type DataConfigProps = {
   configing: ComponentConfig | undefined
@@ -20,7 +21,6 @@ type DataConfigProps = {
 }
 export default ({configing, aliasMap, usedAliases, onChange}: DataConfigProps) => {
   const {metaData} = useContext(DashBoardContext)
-  const [subtitle, setSubtitle] = useState<string>()
   const dimensions = configing?.requestState.dimensions ?? []
   const measures = configing?.requestState.measureConfigs ?? []
   const viewState = configing?.viewState
@@ -65,7 +65,7 @@ export default ({configing, aliasMap, usedAliases, onChange}: DataConfigProps) =
     setAttrMenus(getMenus(metaData!.rootTable))
   }, [metaData, openAttrDrawer])
   function handleSelectAttr(col: ColumnInfo) {
-    let alias: string | undefined
+    let alias = ''
     // 处理别名映射
     if (col.technicalName.type === 'SYSTEM') {
       if (!Object.values(aliasMap.special).includes(col.usage)) { // 别名没在map中
@@ -78,7 +78,7 @@ export default ({configing, aliasMap, usedAliases, onChange}: DataConfigProps) =
           }
         }
       } else { // 别名已在map中
-        alias = Object.keys(aliasMap.special).find(key => aliasMap.special[key] === col.usage)
+        alias = Object.keys(aliasMap.special).find(key => aliasMap.special[key] === col.usage)!
       }
     } else if (col.technicalName.type === 'CUSTOM') {
       if (!Object.values(aliasMap.normal).includes(col.key)) {
@@ -91,7 +91,7 @@ export default ({configing, aliasMap, usedAliases, onChange}: DataConfigProps) =
           }
         }
       } else {
-        alias = Object.keys(aliasMap.normal).find(key => aliasMap.normal[key] === col.key)
+        alias = Object.keys(aliasMap.normal).find(key => aliasMap.normal[key] === col.key)!
       }
     }
 
@@ -101,15 +101,26 @@ export default ({configing, aliasMap, usedAliases, onChange}: DataConfigProps) =
         ...configing!,
         requestState: {
           ...configing!.requestState,
-          dimensions: [...configing!.requestState?.dimensions as any, {
+          dimensions: [...configing?.requestState?.dimensions ?? [], {
             id: uuid(),
-            alias: alias!,
+            alias,
             type: col.type
           }]
         }
       }, aliasMap)
     } else if (openAttrDrawer === 'measure') { // 添加指标
-
+      onChange({
+        ...configing!,
+        requestState: {
+          ...configing!.requestState,
+          measureConfigs: [...configing!.requestState?.measureConfigs ?? [], {
+            id: uuid(),
+            alias,
+            type: col.type,
+            aggregation: col.aggregationConfig.defaultAggregation
+          }]
+        }
+      })
     }
   }
   function judgeDelAlias(alias: string) {
@@ -178,6 +189,19 @@ export default ({configing, aliasMap, usedAliases, onChange}: DataConfigProps) =
     })
   }
 
+  const [editAggInfo, setEditAggInfo] = useState<{curAgg: AggMethodInfo, colInfo: ColumnInfo, index: number}>()
+  function handleChangeAgg(agg: Aggregation) {
+    measures[editAggInfo!.index].aggregation = agg
+    onChange({
+      ...configing!,
+      requestState: {
+        ...configing!.requestState,
+        measureConfigs: [...measures]
+      }
+    })
+    setEditAggInfo(undefined)
+  }
+
   return (
     <>
       {
@@ -202,23 +226,42 @@ export default ({configing, aliasMap, usedAliases, onChange}: DataConfigProps) =
           }
         })}/>
         {
-          subtitle === undefined && (
+          !viewState?.hasSubtitle && (
             <Button className='!text-blue-400 hover:!text-blue-500 !flex !justify-between !items-center'
                     icon={<PlusOutlined/>}
                     type='text'
-                    onClick={() => setSubtitle('')}
+                    onClick={() => onChange({
+                      ...configing!,
+                      viewState: {
+                        ...viewState!,
+                        hasSubtitle: true
+                      }
+                    })}
             >添加副标题</Button>
           )
         }
       </Label>
       {
-        subtitle !== undefined && (
+        viewState?.hasSubtitle && (
           <Label title='副标题'>
             <div className='flex justify-center items-center'>
-              <Input value={viewState!.subtitle}/>
+              <Input value={viewState!.subtitle} onChange={e => onChange({
+                ...configing!,
+                viewState: {
+                  ...viewState!,
+                  subtitle: e.target.value
+                }
+              })}/>
               <Button icon={<DeleteOutlined/>} type='text'
                       className='!text-gray-400 hover:!text-red-400'
-                      onClick={() => setSubtitle(undefined)}
+                      onClick={() => onChange({
+                        ...configing!,
+                        viewState: {
+                          ...viewState!,
+                          hasSubtitle: false,
+                          subtitle: ''
+                        }
+                      })}
               />
             </div>
           </Label>
@@ -252,6 +295,7 @@ export default ({configing, aliasMap, usedAliases, onChange}: DataConfigProps) =
                                               isDimension={false}
                                               onDelete={() => handleDeleteMeasure(i)}
                                               onSelectGranularity={value => handleSelectMeasureGranularity(i, value)}
+                                              onSelectAgg={(curAgg, colInfo) => setEditAggInfo({curAgg, colInfo, index: i})}
           />)
         }
         <Button disabled={openAttrDrawer === 'measure'}
@@ -280,18 +324,34 @@ export default ({configing, aliasMap, usedAliases, onChange}: DataConfigProps) =
         >配置排序</Button>
       </Label>
       <InlineLabel title='堆叠'>
-        <Switch/>
+        <Switch checked={configing?.viewState.isStacked} onChange={v => onChange({
+          ...configing!,
+          viewState: {...configing!.viewState, isStacked: v}
+        })}/>
       </InlineLabel>
       <InlineLabel title='反转轴'>
-        <Switch/>
+        <Switch checked={configing?.viewState.isInverted} onChange={v => onChange({
+          ...configing!,
+          viewState: {...configing!.viewState, isInverted: v}
+        })}/>
       </InlineLabel>
       <InlineLabel title='包括空值'>
-        <Switch/>
+        <Switch checked={configing?.requestState.includeNullValues} onChange={v => onChange({
+          ...configing!,
+          requestState: {...configing!.requestState, includeNullValues: v}
+        })}/>
       </InlineLabel>
       <AttributeDrawer category={openAttrDrawer}
                        onClose={() => setOpenAttrDrawer(undefined)}
                        attrMenus={attrMenus}
                        onSelect={handleSelectAttr}
+      />
+      <EditAggDrawer open={!!editAggInfo}
+                     aggs={editAggInfo?.colInfo.aggregationConfig.aggregations ?? []}
+                     selectedAttr={editAggInfo?.colInfo.description ?? ''}
+                     selectedAgg={editAggInfo?.curAgg}
+                     onClose={() => setEditAggInfo(undefined)}
+                     onSelect={handleChangeAgg}
       />
     </>
   )

@@ -9,6 +9,7 @@ import MeasureConfig from "@/components/component-config-drawer/measure-config";
 import {getColData} from "@/components/component-config-drawer/utils";
 import {CloseOutlined} from "@ant-design/icons";
 import {ConfigChangeHandler} from "@/pages/analyses/[aid]";
+import classNames from "classnames";
 
 type ComponentConfigProps = {
   configing: ComponentConfig | undefined
@@ -27,30 +28,40 @@ export default ({configing, onClose, aliasMap, usedAliases, onChangeConfig}: Com
   const {metaData} = useContext(DashBoardContext)
   const options = [{
     label: "设置",
-    value: `${OptionType.DATA_CONFIG.toString()}:${OptionType.DATA_CONFIG.toString()}`,
+    value: `${OptionType.DATA_CONFIG.toString()}:${OptionType.DATA_CONFIG.toString()}:`,
   }, {
     label: "自定义",
-    value: `${OptionType.VIEW_CONFIG.toString()}:${OptionType.VIEW_CONFIG.toString()}`,
+    value: `${OptionType.VIEW_CONFIG.toString()}:${OptionType.VIEW_CONFIG.toString()}:`,
   },
-    ...configing?.requestState.dimensions?.map(item => ({
-      label: `维度：${getColData(item.alias, aliasMap, metaData)?.description ?? ''}`,
-      value: `${OptionType.DIMENSION_CONFIG.toString()}:${item.id}`,
-    })) ?? [],
-    ...configing?.requestState.measureConfigs?.map(item => ({
-      label: `指标：${getColData(item.alias, aliasMap, metaData)?.description ?? ''}`,
-      value: `${OptionType.QUOTA_CONFIG.toString()}:${item.id}`,
-    })) ?? []
+    ...configing?.requestState.dimensions?.map((item, i) => {
+      const colInfo = getColData(item.alias, aliasMap, metaData)
+      return {
+        label: `维度：${colInfo?.description}`,
+        value: `${OptionType.DIMENSION_CONFIG.toString()}:${item.id}:${colInfo?.description}`,
+        className: classNames({'border-t border-t-slate-200': i === 0})
+      }
+    }) ?? [],
+    ...configing?.requestState.measureConfigs?.map((item, i) => {
+      const colInfo = getColData(item.alias, aliasMap, metaData)
+      return {
+        label: `指标：${colInfo?.description}`,
+        value: `${OptionType.QUOTA_CONFIG.toString()}:${item.id}:${colInfo?.description}`,
+        className: classNames({'border-t border-t-slate-200': i === 0})
+      }
+    }) ?? []
   ]
 
   const [settingWhat, setSettingWhat] = useState({
     type: OptionType.DATA_CONFIG.toString(),
-    id: OptionType.DATA_CONFIG.toString()
+    id: OptionType.DATA_CONFIG.toString(),
+    name: '',
   })
   function handleChangeSettingWhat(v: string) {
-    const [type, id] = v.split(':')
+    const [type, id, name] = v.split(':')
     setSettingWhat({
       type,
-      id
+      id,
+      name
     })
   }
 
@@ -60,7 +71,11 @@ export default ({configing, onClose, aliasMap, usedAliases, onChangeConfig}: Com
                                                      usedAliases={usedAliases}
                                                      onChange={onChangeConfig}/>,
     [OptionType.VIEW_CONFIG.toString()]: <ViewConfig/>,
-    [OptionType.DIMENSION_CONFIG.toString()]: <DimensionConfig/>,
+    [OptionType.DIMENSION_CONFIG.toString()]: <DimensionConfig configing={configing}
+                                                               onChange={onChangeConfig}
+                                                               id={settingWhat.id}
+                                                               name={settingWhat.name}
+    />,
     [OptionType.QUOTA_CONFIG.toString()]: <MeasureConfig/>
   }
   return (
@@ -74,7 +89,7 @@ export default ({configing, onClose, aliasMap, usedAliases, onChangeConfig}: Com
             extra={<Button onClick={onClose} type='text' icon={<CloseOutlined/>}/>}
     >
       <div className='sticky top-0 z-10 px-3 py-2 bg-slate-100'>
-        <Select value={`${settingWhat.type}:${settingWhat.id}`} options={options} className='w-full' onChange={handleChangeSettingWhat} />
+        <Select value={`${settingWhat.type}:${settingWhat.id}:${settingWhat.name}`} options={options} className='w-full' onChange={handleChangeSettingWhat} />
       </div>
       <div className='px-3'>
         {configMap[settingWhat.type]}

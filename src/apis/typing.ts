@@ -1,4 +1,5 @@
 import {ValueType} from "./metaInfo";
+import type {Layout} from "react-grid-layout";
 
 export enum ComponentType {
   CHART = 0,
@@ -18,16 +19,16 @@ export enum ChartType {
 }
 
 type AxisConfig = {
-  "showAxisLabels": true,
-  "autoAxisTitle": true,
-  "axisTitle": "",
-  "showHorizontalLines": true,
-  "autoDataRange": true,
-  "autoZoom": false,
-  "showAbbreviateValues": true
+  "showAxisLabels": boolean,
+  "autoAxisTitle": boolean,
+  "axisTitle": string,
+  "showHorizontalLines": boolean,
+  "autoDataRange": boolean,
+  "autoZoom": boolean,
+  "showAbbreviateValues": boolean
 }
 type GranularitiesType = "SECONDS" | "MINUTES" | "HOUR_OF_DAY" | "DAY_OF_MONTH" | "MONTH_OF_YEAR" | "YEARS" | "WEEK_OF_YEAR" | "DAY_OF_WEEK" | "DAY_OF_YEAR"
-type Aggregation = "countDistinct" | "count" | "noAgg"
+export type Aggregation = "sum" | "avg" | "max" | "min" | "stddev" | "median" | "countDistinct" | "count" | "ratio" | "noAgg"
 export type AttrConfig = {
   aggregation?: Aggregation
   alias: string
@@ -51,7 +52,11 @@ export type ComponentConfig = {
     autoDimensionAxisTitle: boolean
     caption: string
     dimensions: {
-      [key: string]: any
+      [key: string]: {
+        useNameAsTitle: boolean
+        id: string
+        displayName: string
+      }
     }
     measures: {
       [key: string]: {
@@ -81,16 +86,10 @@ export type ComponentConfig = {
     subtitle: string
   }
 }
-export type ChartLayout = {
-  x: number
-  y: number
-  w: number
-  h: number
-}
 
 export type Chart = {
   config: ComponentConfig,
-  layout: ChartLayout
+  layout: Layout
 }
 
 export type DashBoardContent = {

@@ -1,12 +1,16 @@
 import {getColData} from "@/components/component-config-drawer/utils";
 import {Button, Popover, Tooltip} from "antd";
-import {ColumnType, MetaData} from "../../../apis/metaInfo";
-import {DeleteOutlined, DownOutlined} from "@ant-design/icons";
-import {AliasMapping, AttrConfig} from "../../../apis/typing";
+import {ColumnInfo, ColumnType, MetaData} from "../../../apis/metaInfo";
+import {DeleteOutlined, DownOutlined, FunctionOutlined} from "@ant-design/icons";
+import {Aggregation, AliasMapping, AttrConfig} from "../../../apis/typing";
 import classNames from "classnames";
 import moment from "moment";
 import {useState} from "react";
 
+export type AggMethodInfo = {
+  key: Aggregation
+  description: string
+}
 type AttrItemProps = {
   isDimension: boolean
   aliasMap: AliasMapping
@@ -14,16 +18,20 @@ type AttrItemProps = {
   attrInfo: AttrConfig
   onDelete: () => void
   onSelectGranularity: (value: any) => void
+  onSelectAgg?: (curAgg: AggMethodInfo, colInfo: ColumnInfo) => void
 }
-export default ({isDimension, attrInfo, aliasMap, metaData, onDelete, onSelectGranularity}: AttrItemProps) => {
+export default ({isDimension, attrInfo, aliasMap, metaData, onDelete, onSelectGranularity, onSelectAgg}: AttrItemProps) => {
   const col = getColData(attrInfo.alias, aliasMap, metaData)
-  const text = isDimension ? <span className='font-medium'>{col?.description}</span>
-    : (
-        <>
-          <span className='text-gray-500'>{attrInfo.aggregation}</span>
-          (<span className='font-medium'>{col?.description}</span>)
-        </>
-      )
+  let text = <span className='font-medium'>{col?.description}</span>
+  const aggInfo = col?.aggregationConfig.aggregations.find(agg => agg.key === attrInfo.aggregation)
+  if (!isDimension) {
+    text = (
+      <>
+        <span className='text-gray-500'>{aggInfo?.description}</span>
+        (<span className='font-medium'>{col?.description}</span>)
+      </>
+    )
+  }
 
   return (
     <Tooltip key={attrInfo.id} color='white' overlayInnerStyle={{color: 'black'}} placement='left'
@@ -39,6 +47,13 @@ export default ({isDimension, attrInfo, aliasMap, metaData, onDelete, onSelectGr
         <Button.Group>
           <Button className='!invisible'/>
           <GranularitiesPopover attrInfo={attrInfo} onSelect={onSelectGranularity}/>
+          {!isDimension && (
+            <Button className='!hidden group-hover:!inline-block'
+                    type='text'
+                    icon={<FunctionOutlined/>}
+                    onClick={() => onSelectAgg?.(aggInfo!, col!)}
+            />
+          )}
           <Button className='!hidden group-hover:!inline-block'
                   type='text'
                   icon={<DeleteOutlined className='hover:!text-red-400'/>}
