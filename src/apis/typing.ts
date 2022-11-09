@@ -46,6 +46,11 @@ export type ComponentConfig = {
     measureConfigs?: AttrConfig[]
     measureConfig?: AttrConfig
     selections?: AttrConfig[]
+    options?: {
+      bucketInterval: number
+      timeUnit: "years" | "months" | "weeks" | "seconds" | "minutes" | "hours" | "days"
+      type: 0
+    }
   }
   type: `${ChartType}`
   viewState: {

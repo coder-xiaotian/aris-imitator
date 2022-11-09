@@ -120,7 +120,7 @@ export default ({configing, aliasMap, usedAliases, onChange}: DataConfigProps) =
             aggregation: col.aggregationConfig.defaultAggregation
           }]
         }
-      })
+      }, aliasMap)
     }
   }
   function judgeDelAlias(alias: string) {
@@ -202,18 +202,34 @@ export default ({configing, aliasMap, usedAliases, onChange}: DataConfigProps) =
     setEditAggInfo(undefined)
   }
 
+  // 正在添加维度 || (图表类型为时间系列图 && 已经配置了一个维度)
+  const isAddDimensionDisable = openAttrDrawer === 'dimension' || (configing?.type === ChartType.TIME && configing.requestState.dimensions?.length === 1)
+  // 正在添加指标 || (图表类型为时间系列图 && 已经配置了一个指标)
+  const isAddMeasureDisable = openAttrDrawer === 'measure' || (configing?.type === ChartType.TIME && configing.requestState.measureConfigs?.length === 1)
+  // 显示分区
+  const isPartitionVisible = configing?.type !== ChartType.TIME
+  // 显示排序
+  const isSortVisible = configing?.type !== ChartType.TIME
+
   return (
     <>
       {
         configing?.type !== ChartType.DIST && configing?.type !== ChartType.TIME && (
           <Label title="图表类型">
-            <Select className='w-full' value={configing?.type} options={[
-              {label: '表', value: ChartType.GRID},
-              {label: '饼图', value: ChartType.PIE},
-              {label: '面积图', value: ChartType.AREA},
-              {label: '条形图', value: ChartType.BAR},
-              {label: '折线图', value: ChartType.LINE}
-            ]} />
+            <Select className='w-full'
+                    value={configing?.type}
+                    onChange={v => onChange({
+                      ...configing!,
+                      type: v
+                    })}
+                    options={[
+                      {label: '表', value: ChartType.GRID},
+                      {label: '饼图', value: ChartType.PIE},
+                      {label: '面积图', value: ChartType.AREA},
+                      {label: '条形图', value: ChartType.BAR},
+                      {label: '折线图', value: ChartType.LINE}
+                    ]}
+            />
           </Label>
         )
       }
@@ -278,9 +294,9 @@ export default ({configing, aliasMap, usedAliases, onChange}: DataConfigProps) =
                                                 onSelectGranularity={(value) => handleSelectDimensionGranularity(i, value)}
           />)
         }
-        <Button disabled={openAttrDrawer === 'dimension'}
+        <Button disabled={isAddDimensionDisable}
                 className={classNames('!flex !justify-between !items-center',
-                  [openAttrDrawer === 'dimension' ? '!text-slate-400' : '!text-blue-400 hover:!text-blue-500'])}
+                  [isAddDimensionDisable ? '!text-slate-400' : '!text-blue-400 hover:!text-blue-500'])}
                 icon={<PlusOutlined/>}
                 type='text'
                 onClick={() => setOpenAttrDrawer('dimension')}
@@ -298,43 +314,71 @@ export default ({configing, aliasMap, usedAliases, onChange}: DataConfigProps) =
                                               onSelectAgg={(curAgg, colInfo) => setEditAggInfo({curAgg, colInfo, index: i})}
           />)
         }
-        <Button disabled={openAttrDrawer === 'measure'}
+        <Button disabled={isAddMeasureDisable}
                 className={classNames('!flex !justify-between !items-center',
-                  [openAttrDrawer === 'measure' ? '!text-slate-400' : '!text-blue-400 hover:!text-blue-500'])}
+                  [isAddMeasureDisable ? '!text-slate-400' : '!text-blue-400 hover:!text-blue-500'])}
                 icon={<PlusOutlined/>}
                 type='text'
                 onClick={() => setOpenAttrDrawer('measure')}
         >添加指标</Button>
       </Label>
-      <Label title='分区'>
-        <Button disabled={true} className='!text-slate-400 !flex !justify-between !items-center'
-                icon={<PlusOutlined/>}
-                type='text'
-                onClick={() => {}}
-        >添加分区</Button>
-      </Label>
-      <Label title='正在排序'>
-        <div>
-          <span className="text-xs">默认排序</span>
-        </div>
-        <Button className='!text-blue-400 hover:!text-blue-500 !flex !justify-between !items-center'
-                icon={<EditOutlined/>}
-                type='text'
-                onClick={() => {}}
-        >配置排序</Button>
-      </Label>
-      <InlineLabel title='堆叠'>
-        <Switch checked={configing?.viewState.isStacked} onChange={v => onChange({
-          ...configing!,
-          viewState: {...configing!.viewState, isStacked: v}
-        })}/>
-      </InlineLabel>
-      <InlineLabel title='反转轴'>
-        <Switch checked={configing?.viewState.isInverted} onChange={v => onChange({
-          ...configing!,
-          viewState: {...configing!.viewState, isInverted: v}
-        })}/>
-      </InlineLabel>
+      {isPartitionVisible && (
+        <Label title='分区'>
+          <Button disabled={true} className='!text-slate-400 !flex !justify-between !items-center'
+                  icon={<PlusOutlined/>}
+                  type='text'
+                  onClick={() => {}}
+          >添加分区</Button>
+        </Label>
+      )}
+      {
+        isSortVisible && (
+          <Label title='正在排序'>
+            <div>
+              <span className="text-xs">默认排序</span>
+            </div>
+            <Button className='!text-blue-400 hover:!text-blue-500 !flex !justify-between !items-center'
+                    icon={<EditOutlined/>}
+                    type='text'
+                    onClick={() => {}}
+            >配置排序</Button>
+          </Label>
+        )
+      }
+      {
+        configing?.type === ChartType.TIME && (
+          <Label title='粒度'>
+            <Select className='w-full' options={[{value: 'seconds', label: '秒'}, {value: 'minutes', label: '分钟'},
+              {value: 'hours', label: '小时'}, {value: 'days', label: '天'}, {value: 'weeks', label: '周'},
+              {value: 'months', label: '月'}, {value: 'years', label: '年'}]}
+                    value={configing.requestState.options?.timeUnit}
+                    onChange={v => onChange({
+                      ...configing,
+                      requestState: {
+                        ...configing.requestState,
+                        options: {...configing.requestState.options!, timeUnit: v}
+                      }
+                    })}
+            />
+          </Label>
+        )
+      }
+      {configing?.type !== ChartType.TIME && (
+        <InlineLabel title='堆叠'>
+          <Switch checked={configing?.viewState.isStacked} onChange={v => onChange({
+            ...configing!,
+            viewState: {...configing!.viewState, isStacked: v}
+          })}/>
+        </InlineLabel>
+      )}
+      {configing?.type !== ChartType.TIME && (
+        <InlineLabel title='反转轴'>
+          <Switch checked={configing?.viewState.isInverted} onChange={v => onChange({
+            ...configing!,
+            viewState: {...configing!.viewState, isInverted: v}
+          })}/>
+        </InlineLabel>
+      )}
       <InlineLabel title='包括空值'>
         <Switch checked={configing?.requestState.includeNullValues} onChange={v => onChange({
           ...configing!,

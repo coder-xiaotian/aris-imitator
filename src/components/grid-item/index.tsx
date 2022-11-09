@@ -55,7 +55,7 @@ export default forwardRef<HTMLDivElement, CardGridProps & GridItemProps>((props,
               </div>
             )}
     >
-      <div className={classNames([className, 'overflow-hidden relative bg-white rounded shadow '], {
+      <div className={classNames([className, 'relative bg-white rounded shadow '], {
         'outline outline-2 outline-blue-400': selected,
         'hover:outline hover:outline-1 hover:outline-gray-900': !disabled && !selected
       })} ref={handleRef} {...otherProps}>

@@ -36,7 +36,8 @@ const CHART_TYPE_MAP = {
 }
 export default memo(({chartConfig, aliasMap, metaData}: ChartProps) => {
   // 获取图表的数据
-  const {data, loading} = useRequest(() => request.post<any, ChartDataResponse, ComponentRequestInfo>('/api/dataSets/data/query/simple', {
+  const {data, loading, error} = useRequest(() => request.post<any, ChartDataResponse, ComponentRequestInfo>('/api/dataSets/data/query/simple',
+    {
     considerDistinct: false,
     includeNullValues: chartConfig.requestState.includeNullValues,
     size: 4000,
@@ -54,12 +55,17 @@ export default memo(({chartConfig, aliasMap, metaData}: ChartProps) => {
         key: colData!.key,
         asColumn: `x${i}`,
         // todo 暂时写死 {type: "timeDistributionConfig", interval: 1, timeUnit: "months"}
-        config: chartConfig.type === ChartType.TIME ? {type: "timeDistributionConfig", interval: 1, timeUnit: "months"} : undefined as any
+        config: chartConfig.type === ChartType.TIME
+          ? {
+            type: "timeDistributionConfig",
+            interval: chartConfig.requestState.options?.bucketInterval,
+            timeUnit: chartConfig.requestState.options?.timeUnit
+          } : undefined as any
       }
     }) ?? [], ...chartConfig.requestState.measureConfigs?.map((m, i) => {
       const colData = getColData(m.alias, aliasMap, metaData)
       const type = /*chartConfig.type !== ChartType.DIST && chartConfig.type !== ChartType.TIME ?*/
-        m.aggregation === 'countDistinct' && m.granularities !== 'noTransformation' ? 'CountDistinctDate' as const : 'Agg' as const
+        m.aggregation === 'countDistinct' && m.granularities && m.granularities !== 'noTransformation' ? 'CountDistinctDate' as const : 'Agg' as const
           // : 'Distribution' as const
 
       return {
@@ -70,9 +76,12 @@ export default memo(({chartConfig, aliasMap, metaData}: ChartProps) => {
         granularities: m.granularities !== 'noTransformation' ? m.granularities : undefined
       }
     }) ?? []]
-  }), {
+  })
+    .catch(e => {
+      return Promise.reject(e.response.data)
+    }), {
     refreshDeps: [chartConfig.requestState],
-    debounceWait: 500
+    debounceWait: 500,
   })
 
   // 根据获取的数据和配置组装echarts的options
@@ -114,6 +123,7 @@ export default memo(({chartConfig, aliasMap, metaData}: ChartProps) => {
       legend: {
         bottom: 0
       },
+      animationDurationUpdate: 1000,
       series: Object.keys(config.viewState.measures).map((key, i) => {
         const viewMeasure = config.viewState.measures[key]
         const type = CHART_TYPE_MAP[viewMeasure.chartType] || CHART_TYPE_MAP[config.type]
@@ -143,6 +153,8 @@ export default memo(({chartConfig, aliasMap, metaData}: ChartProps) => {
         // @ts-ignore
         res.areaStyle = viewMeasure.chartType === ChartType.AREA ? {}
                           : config.type === ChartType.AREA ? {} : undefined
+        res.universalTransition = true
+        res.id = key
         return res
       }),
       dataset: {
@@ -150,6 +162,7 @@ export default memo(({chartConfig, aliasMap, metaData}: ChartProps) => {
         dimensions: headers
       }
     }
+    console.log(opt)
     setChartOptions(opt)
   }
   const handleDataMap = {
@@ -180,7 +193,7 @@ export default memo(({chartConfig, aliasMap, metaData}: ChartProps) => {
       })
     }
     handleDataMap[chartConfig.configType][chartConfig.type]([...data?.headers ?? [], 'xData'], dataSource, chartConfig)
-  }, [data, chartConfig.viewState])
+  }, [data, chartConfig.viewState, chartConfig.type])
 
   const comMap = {
     [ComponentType.CHART as string]: <Chart options={chartOptions}/>
@@ -194,7 +207,10 @@ export default memo(({chartConfig, aliasMap, metaData}: ChartProps) => {
   return (
     <ResizeObserver onResize={handleResize}>
       <Spin spinning={loading} wrapperClassName='w-full h-full'>
-        <RenderCom.type {...RenderCom.props} ref={comRef} />
+        {error ? (
+          // @ts-ignore
+          <div>{error.messageChain}</div>
+        ) : <RenderCom.type {...RenderCom.props} ref={comRef} />}
       </Spin>
     </ResizeObserver>
   )

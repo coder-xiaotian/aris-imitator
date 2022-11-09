@@ -39,6 +39,13 @@ export default ({category, attrMenus, onClose, onSelect}: AttributeDrawerProps) 
   function handleSelectAggMethod(method: Aggregation) {
     // todo 比率暂不处理
     if(method === 'ratio') return
+    console.log({
+      ...selectedAttrInfo.col!,
+      aggregationConfig: {
+        ...selectedAttrInfo.col!.aggregationConfig,
+        defaultAggregation: method
+      }
+    })
     onSelect({
       ...selectedAttrInfo.col!,
       aggregationConfig: {
@@ -98,18 +105,20 @@ export default ({category, attrMenus, onClose, onSelect}: AttributeDrawerProps) 
 }
 
 function Menu({item, onClick}: {item: AttrMenu, onClick: (item: ColumnInfo) => void}) {
+  const [collapse, setCollapse] = useState(false)
+
   return (
-    <div className=''>
+    <div>
       <div className='flex justify-between items-stretch border-y'>
-        <div className='flex justify-center items-center w-8 py-2 hover:bg-slate-200'>
-          <DownOutlined/>
+        <div className='flex justify-center items-center w-8 py-2 hover:bg-slate-200' onClick={() => setCollapse(!collapse)}>
+          <DownOutlined className={classNames('transition-all ease-in-out', {'-rotate-90': collapse})}/>
         </div>
         <div className='grow flex flex-col justify-center py-2'>
           <span className='text-slate-400 text-xs'>{item.subTitle}</span>
           <span>{item.title}</span>
         </div>
       </div>
-      <ul>
+      <ul className={classNames('mb-0 h-fit transition-all ease-in-out', {'overflow-hidden h-0': collapse})}>
         {item.children.map(child => (
           <li className="cursor-pointer flex items-center pl-8 py-2 hover:bg-slate-200 transition-all"
               key={child.key}

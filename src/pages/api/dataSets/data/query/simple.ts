@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import request from '@/utils/server-request'
+import {AxiosError} from "axios";
 
 type Data = {
   name: string
@@ -15,7 +16,11 @@ export default async function handler(
       const r = await request.post("https://processmining-us.ariscloud.com/mining/api/int/tenants/supertis2/dataSets/data/query/simple?locale=zh-CN&apiTag=22A0", req.body)
       res.status(200).json(r.data)
     }
-  } catch (e: any) {
-    res.status(500).json(e)
+  } catch (e) {
+    if (e instanceof AxiosError) {
+      res.status(e.response!.status).json(e.response?.data)
+      return
+    }
+    res.status(500)
   }
 }

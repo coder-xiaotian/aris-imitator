@@ -105,7 +105,8 @@ const DashBoard = () => {
       alias: {},
       requestState: {
         id,
-        includeNullValues: true
+        includeNullValues: true,
+        options: type === ChartType.TIME ? {bucketInterval: 1, type: 0, timeUnit: 'months'} : undefined
       },
       type: type,
       viewState: {
