@@ -36,7 +36,7 @@ export type AttrConfig = {
   type: ValueType
   "granularities"?: GranularitiesType[] | 'noTransformation'
 }
-export type ComponentConfig = {
+export type ComponentConfig<CT = `${ChartType}`> = {
   configType: `${ComponentType}`
   alias?: Record<string, string>
   requestState: {
@@ -48,11 +48,12 @@ export type ComponentConfig = {
     selections?: AttrConfig[]
     options?: {
       bucketInterval: number
-      timeUnit: "years" | "months" | "weeks" | "seconds" | "minutes" | "hours" | "days"
-      type: 0
+      timeUnit?: CT extends "dist" ? "years" | "months" | "weeks" | "seconds" | "minutes" | "hours" | "days" : "y" | "m" | "w" | "ms" | "s" | "min" | "h" | "d"
+      bucketIntervalUnit?: | "BASE" | "K" | "M" | "B"
+      type: number
     }
   }
-  type: `${ChartType}`
+  type: CT
   viewState: {
     autoDimensionAxisTitle: boolean
     caption: string
@@ -146,7 +147,7 @@ export type ComponentRequestInfo = {
     "config"?: {
       "type": "timeDistributionConfig" | "distributionConfig"
       "interval": 1
-      "timeUnit": "months"
+      "timeUnit"?: "months"
     },
     "parameters"?: any[]
     "aggregation"?: string

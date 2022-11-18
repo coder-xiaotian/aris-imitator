@@ -7,9 +7,8 @@ import {
   FieldStringOutlined,
   FieldTimeOutlined
 } from "@ant-design/icons";
-import {ReactElement, useContext, useEffect, useRef, useState} from "react";
-import {DashBoardContext} from "@/components/layouts/dashboard-layout";
-import {ColumnInfo, TableData} from "../../../apis/metaInfo";
+import {ReactElement, useState} from "react";
+import {ColumnInfo} from "../../../apis/metaInfo";
 import {Aggregation} from "../../../apis/typing";
 
 const fieldIconMap: Record<string, ReactElement> = {
@@ -39,13 +38,7 @@ export default ({category, attrMenus, onClose, onSelect}: AttributeDrawerProps) 
   function handleSelectAggMethod(method: Aggregation) {
     // todo 比率暂不处理
     if(method === 'ratio') return
-    console.log({
-      ...selectedAttrInfo.col!,
-      aggregationConfig: {
-        ...selectedAttrInfo.col!.aggregationConfig,
-        defaultAggregation: method
-      }
-    })
+
     onSelect({
       ...selectedAttrInfo.col!,
       aggregationConfig: {

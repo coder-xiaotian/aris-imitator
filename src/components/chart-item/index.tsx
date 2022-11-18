@@ -18,6 +18,9 @@ import ResizeObserver from "rc-resize-observer";
 import {XAXisOption, YAXisOption} from "echarts/types/dist/shared";
 // @ts-ignore
 import abbreviate from 'number-abbreviate'
+import {OptionEncode} from "echarts/types/src/util/types";
+import {calcBucketIntervalVal} from "@/components/component-config-drawer/data-config/bucket";
+import ecStat, {histogram} from 'echarts-stat'
 
 type ChartProps = {
   chartConfig: ComponentConfig
@@ -40,7 +43,9 @@ export default memo(({chartConfig, aliasMap, metaData}: ChartProps) => {
     {
     considerDistinct: false,
     includeNullValues: chartConfig.requestState.includeNullValues,
-    size: 4000,
+    size: chartConfig.type === ChartType.PIE ? 50 :
+      chartConfig.type === ChartType.GRID ? 10000
+        : 4000,
     sortCriteria: [],
     filterList: {
       type: 'FilterList',
@@ -49,18 +54,26 @@ export default memo(({chartConfig, aliasMap, metaData}: ChartProps) => {
     },
     selections: [...chartConfig.requestState.dimensions?.map((d, i) => {
       const colData = getColData(d.alias, aliasMap, metaData)
+      let config: any
+      if (chartConfig.type === ChartType.TIME) {
+        config = {
+          type: "timeDistributionConfig",
+          interval: chartConfig.requestState.options?.bucketInterval,
+          timeUnit: chartConfig.requestState.options?.timeUnit
+        }
+      } else if (chartConfig.type === ChartType.DIST) {
+        config = {
+          interval: calcBucketIntervalVal(chartConfig.requestState.options?.bucketIntervalUnit || chartConfig.requestState.options?.timeUnit,
+            chartConfig.requestState.options?.bucketInterval ?? 0, "multiply"),
+          type: "distributionConfig"
+        }
+      }
 
       return {
         type: chartConfig.type !== ChartType.DIST && chartConfig.type !== ChartType.TIME ? 'Standard' as const : 'Distribution' as const,
         key: colData!.key,
         asColumn: `x${i}`,
-        // todo 暂时写死 {type: "timeDistributionConfig", interval: 1, timeUnit: "months"}
-        config: chartConfig.type === ChartType.TIME
-          ? {
-            type: "timeDistributionConfig",
-            interval: chartConfig.requestState.options?.bucketInterval,
-            timeUnit: chartConfig.requestState.options?.timeUnit
-          } : undefined as any
+        config
       }
     }) ?? [], ...chartConfig.requestState.measureConfigs?.map((m, i) => {
       const colData = getColData(m.alias, aliasMap, metaData)
@@ -87,6 +100,7 @@ export default memo(({chartConfig, aliasMap, metaData}: ChartProps) => {
   // 根据获取的数据和配置组装echarts的options
   const [chartOptions, setChartOptions] = useState<EChartsOption>({})
   function handleOptions(headers: string[], dataSource: any[][] | undefined, config: ComponentConfig) {
+    const isPie = config.type === ChartType.PIE
     let xAxis: XAXisOption = {
       type: 'category',
       axisLabel: {
@@ -95,6 +109,7 @@ export default memo(({chartConfig, aliasMap, metaData}: ChartProps) => {
         // @ts-ignore
         overflow: 'truncate'
       },
+      show: !isPie
     }
     const abbrFormatter = (value: number | string) => {
       return abbreviate(value)
@@ -103,7 +118,8 @@ export default memo(({chartConfig, aliasMap, metaData}: ChartProps) => {
       type: 'value',
       axisLabel: {
         formatter: abbrFormatter,
-      }
+      },
+      show: !isPie
     }
     if (config.viewState.isInverted) {
       xAxis = {type: 'value', axisLabel: {formatter: abbrFormatter}}
@@ -118,9 +134,10 @@ export default memo(({chartConfig, aliasMap, metaData}: ChartProps) => {
       xAxis,
       yAxis,
       tooltip: {
-        trigger: 'axis'
+        trigger: isPie ? 'item' : 'axis'
       },
       legend: {
+        type: 'scroll',
         bottom: 0
       },
       animationDurationUpdate: 1000,
@@ -138,7 +155,7 @@ export default memo(({chartConfig, aliasMap, metaData}: ChartProps) => {
         }
 
         res.type = type
-        let encode = {
+        let encode: OptionEncode = {
           x: 'xData',
           y: `y${i}`,
         }
@@ -147,6 +164,20 @@ export default memo(({chartConfig, aliasMap, metaData}: ChartProps) => {
             x: `y${i}`,
             y: 'xData',
           }
+        }
+        if (isPie) {
+          encode = {
+            itemName: 'xData',
+            value: `y${i}`
+          }
+          // @ts-ignore
+          res.itemStyle = {
+            borderRadius: 4,
+            borderColor: '#fff',
+            borderWidth: 2
+          }
+          // @ts-ignore
+          res.radius = ['30%', '70%']
         }
         // @ts-ignore
         res.encode = encode
@@ -162,8 +193,10 @@ export default memo(({chartConfig, aliasMap, metaData}: ChartProps) => {
         dimensions: headers
       }
     }
-    console.log(opt)
     setChartOptions(opt)
+  }
+  function handleDistOptions() {
+
   }
   const handleDataMap = {
     [ComponentType.CHART as string]: {
@@ -171,28 +204,39 @@ export default memo(({chartConfig, aliasMap, metaData}: ChartProps) => {
       [ChartType.BAR as string]: handleOptions,
       [ChartType.AREA as string]: handleOptions,
       [ChartType.TIME as string]: handleOptions,
+      [ChartType.PIE as string]: handleOptions,
+      [ChartType.DIST as string]: handleOptions
     }
   }
   useEffect(() => {
-    const dIndexs = data?.headers.reduce((res, h, i) => {
+    if (!data) return
+
+    const dIndexs = data.headers.reduce((res, h, i) => {
       if (h.includes('x')) {
         res.push(i)
       }
       return res
-    }, [] as number[]) ?? [] // headers中x轴数据列的索引列表
-    let dataSource = data?.rows ?? []
-    if (dIndexs.length) {
-      // 将数据中的x轴数据拼接成一列放在最后一列
-      dataSource = dataSource.map(cols => {
-        let dName = cols[dIndexs[0]]
-        for (let i = 1; i < dIndexs.length; i++) {
-          dName += `-${cols[dIndexs[i]]}`
-        }
-
-        return [...cols, dName]
+    }, [] as number[]) // headers中x轴数据列的索引列表
+    let dataSource = data.rows
+    if (chartConfig.type === ChartType.DIST) {
+      dataSource = dataSource.map((cols, i) => {
+        cols.push(`${cols[dIndexs[0]]}-${dataSource[i+1]?.[dIndexs[0]]}`)
+        return cols
       })
+    } else {
+      if (dIndexs.length) {
+        // 将数据中的x轴数据拼接成一列放在最后一列
+        dataSource = dataSource.map(cols => {
+          let dName = cols[dIndexs[0]]
+          for (let i = 1; i < dIndexs.length; i++) {
+            dName += `-${cols[dIndexs[i]]}`
+          }
+
+          return [...cols, dName]
+        })
+      }
     }
-    handleDataMap[chartConfig.configType][chartConfig.type]([...data?.headers ?? [], 'xData'], dataSource, chartConfig)
+    handleDataMap[chartConfig.configType][chartConfig.type]([...data.headers, 'xData'], dataSource, chartConfig)
   }, [data, chartConfig.viewState, chartConfig.type])
 
   const comMap = {

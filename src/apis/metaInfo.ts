@@ -29,7 +29,7 @@ export type ColumnInfo = {
     "hasAggregations": boolean
   },
   "type": ValueType,
-  "flags": string[],
+  "flags": ("distributable" | "filterable")[],
   "usage": string | "NONE",
   "executionMode": "NORMAL",
   "isCustomCalculation": boolean,

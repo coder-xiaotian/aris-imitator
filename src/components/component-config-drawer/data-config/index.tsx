@@ -1,5 +1,5 @@
 import Label from "@/components/label";
-import {Button, Input, Select, Switch} from "antd";
+import {Button, Input, InputNumber, Radio, Select, Switch} from "antd";
 import {DeleteOutlined, EditOutlined, PlusOutlined} from "@ant-design/icons";
 import {useContext, useEffect, useState} from "react";
 import {Aggregation, AliasMapping, ChartType, ComponentConfig} from "../../../apis/typing";
@@ -12,6 +12,7 @@ import {v4 as uuid} from 'uuid'
 import {ConfigChangeHandler} from "@/pages/analyses/[aid]";
 import AttrItem, {AggMethodInfo} from "@/components/component-config-drawer/data-config/attr-item";
 import EditAggDrawer from "@/components/component-config-drawer/data-config/edit-agg-drawer";
+import Bucket, {getType1Opt} from "@/components/component-config-drawer/data-config/bucket";
 
 type DataConfigProps = {
   configing: ComponentConfig | undefined
@@ -46,12 +47,15 @@ export default ({configing, aliasMap, usedAliases, onChange}: DataConfigProps) =
       excludeTypes.push('TIMESPAN', 'TIME_RANGE', 'TEXT', 'DOUBLE', 'LONG')
     }
     function getMenus(tableData: TableData, prevTitles: string[] = [], menuList: any[] = []) {
+      const isDist = configing?.type === 'dist' // 直方图将distributable过滤处理
+
       menuList.push({
         type: tableData.tableInfo.type,
         title: tableData.tableInfo.name,
         subTitle: prevTitles.join('/'),
         children: tableData.columns.filter(col => {
-          return !col.isInternal && !excludeTypes.includes(col.type) && (
+          return !col.isInternal && !excludeTypes.includes(col.type) &&
+            (isDist && col.flags.includes('distributable')) && (
             col.usage !== 'NONE' ? !excludeKeys.includes(col.usage) : !excludeKeys.includes(col.key)
           )
         })
@@ -97,17 +101,32 @@ export default ({configing, aliasMap, usedAliases, onChange}: DataConfigProps) =
 
     // todo 添加维度指标时把viewState中的配置加上
     if (openAttrDrawer === 'dimension') { // 添加维度
-      onChange({
-        ...configing!,
-        requestState: {
-          ...configing!.requestState,
-          dimensions: [...configing?.requestState?.dimensions ?? [], {
-            id: uuid(),
-            alias,
-            type: col.type
-          }]
-        }
-      }, aliasMap)
+      if (configing?.type === ChartType.DIST) {
+        onChange({
+          ...configing!,
+          requestState: {
+            ...configing!.requestState,
+            dimensions: [...configing?.requestState?.dimensions ?? [], {
+              id: uuid(),
+              alias,
+              type: col.type
+            }],
+            options: getType1Opt(col.type)
+          }
+        }, aliasMap)
+      } else {
+        onChange({
+          ...configing!,
+          requestState: {
+            ...configing!.requestState,
+            dimensions: [...configing?.requestState?.dimensions ?? [], {
+              id: uuid(),
+              alias,
+              type: col.type
+            }]
+          }
+        }, aliasMap)
+      }
     } else if (openAttrDrawer === 'measure') { // 添加指标
       onChange({
         ...configing!,
@@ -202,14 +221,19 @@ export default ({configing, aliasMap, usedAliases, onChange}: DataConfigProps) =
     setEditAggInfo(undefined)
   }
 
-  // 正在添加维度 || (图表类型为时间系列图 && 已经配置了一个维度)
-  const isAddDimensionDisable = openAttrDrawer === 'dimension' || (configing?.type === ChartType.TIME && configing.requestState.dimensions?.length === 1)
-  // 正在添加指标 || (图表类型为时间系列图 && 已经配置了一个指标)
-  const isAddMeasureDisable = openAttrDrawer === 'measure' || (configing?.type === ChartType.TIME && configing.requestState.measureConfigs?.length === 1)
+  // 正在添加维度 || (时间系列图 && 已经配置了一个维度) || (直方图 && 已经配置了一个维度)
+  const isAddDimensionDisable = openAttrDrawer === 'dimension'
+    || (configing?.type === ChartType.TIME && configing.requestState.dimensions?.length === 1)
+    || (configing?.type === ChartType.DIST && configing.requestState.dimensions?.length === 1)
+  // 正在添加指标 || (时间系列图 && 已经配置了一个指标) || (饼图 && 已经配置了一个指标) || (直方图 && 已经配置了一个指标)
+  const isAddMeasureDisable = openAttrDrawer === 'measure' ||
+    (configing?.type === ChartType.TIME && configing.requestState.measureConfigs?.length === 1) ||
+    (configing?.type === ChartType.PIE && configing.requestState.measureConfigs?.length === 1) ||
+    (configing?.type === ChartType.DIST && configing.requestState.measureConfigs?.length === 1)
   // 显示分区
-  const isPartitionVisible = configing?.type !== ChartType.TIME
+  const isPartitionVisible = configing?.type !== ChartType.TIME && configing?.type !== ChartType.PIE && configing?.type !== ChartType.DIST
   // 显示排序
-  const isSortVisible = configing?.type !== ChartType.TIME
+  const isSortVisible = configing?.type !== ChartType.TIME && configing?.type !== ChartType.DIST
 
   return (
     <>
@@ -363,7 +387,12 @@ export default ({configing, aliasMap, usedAliases, onChange}: DataConfigProps) =
           </Label>
         )
       }
-      {configing?.type !== ChartType.TIME && (
+      {
+        configing?.type === ChartType.DIST && (
+          <Bucket configing={configing} onChange={onChange}/>
+        )
+      }
+      {configing?.type !== ChartType.TIME && configing?.type !== ChartType.PIE && configing?.type !== ChartType.DIST && (
         <InlineLabel title='堆叠'>
           <Switch checked={configing?.viewState.isStacked} onChange={v => onChange({
             ...configing!,
@@ -371,7 +400,7 @@ export default ({configing, aliasMap, usedAliases, onChange}: DataConfigProps) =
           })}/>
         </InlineLabel>
       )}
-      {configing?.type !== ChartType.TIME && (
+      {configing?.type !== ChartType.TIME && configing?.type !== ChartType.PIE && configing?.type !== ChartType.DIST && (
         <InlineLabel title='反转轴'>
           <Switch checked={configing?.viewState.isInverted} onChange={v => onChange({
             ...configing!,

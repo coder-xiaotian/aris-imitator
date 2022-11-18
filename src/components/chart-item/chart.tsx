@@ -1,7 +1,9 @@
 import * as echarts from 'echarts'
 import type {EChartsOption, EChartsType} from "echarts";
 import {forwardRef, useEffect, useImperativeHandle, useRef} from "react";
+import {transform} from 'echarts-stat';
 
+echarts.registerTransform(transform.histogram)
 type ChartProps = {
   options: EChartsOption
 }
