@@ -133,7 +133,7 @@ export default ({configing, onChange}: BucketProps) => {
                requestState: {
                  ...configing!.requestState,
                  options: {
-                   ...configing!.requestState.options!,
+                   numberOfBuckets: 10,
                    type: 2
                  }
                }
@@ -143,15 +143,57 @@ export default ({configing, onChange}: BucketProps) => {
         configing?.requestState.options?.type === 2 && (
           <>
             <Label title='存储桶数' className='pl-6'>
-              <InputNumber className='!block' min={1} addonAfter="%"/>
+              <InputNumber className='!w-full' min={1}
+                           value={configing.requestState.options.numberOfBuckets}
+                           onChange={v => onChange({
+                             ...configing,
+                             requestState: {
+                               ...configing.requestState,
+                               options: {
+                                 ...configing.requestState.options!,
+                                 numberOfBuckets: v!
+                               }
+                             }
+                           })}
+              />
             </Label>
             <div className='flex justify-between mt-4 pl-6'>
               <span>为异常值添加存储桶（其他）</span>
-              <Switch/>
+              <Switch checked={Boolean(configing.requestState.options.otherBucketPercentage)} onChange={v => {
+                if (v) {
+                  configing.requestState = {
+                    ...configing.requestState,
+                    options: {
+                      ...configing.requestState.options!,
+                      otherBucketPercentage: 10
+                    }
+                  }
+                } else {
+                  configing.requestState = {
+                    ...configing.requestState,
+                    options: {
+                      ...configing.requestState.options!,
+                      otherBucketPercentage: 0
+                    }
+                  }
+                }
+                onChange({...configing})
+              }}/>
             </div>
-            <Label title='异常值存储桶中的数据百分比（其他）' className='pl-6'>
-              <InputNumber className='!block' min={1} addonAfter="%"/>
-            </Label>
+            {Boolean(configing.requestState.options.otherBucketPercentage) && (
+              <Label title='异常值存储桶中的数据百分比（其他）' className='pl-6'>
+                <InputNumber value={configing.requestState.options.otherBucketPercentage} onChange={(v) => onChange({
+                  ...configing,
+                  requestState: {
+                    ...configing.requestState,
+                    options: {
+                      ...configing.requestState.options!,
+                      otherBucketPercentage: v!
+                    }
+                  }
+                })} className='!block' min={1} addonAfter="%"/>
+              </Label>
+            )}
           </>
         )
       }

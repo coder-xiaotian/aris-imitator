@@ -47,10 +47,12 @@ export type ComponentConfig<CT = `${ChartType}`> = {
     measureConfig?: AttrConfig
     selections?: AttrConfig[]
     options?: {
-      bucketInterval: number
+      bucketInterval?: number
       timeUnit?: CT extends "dist" ? "years" | "months" | "weeks" | "seconds" | "minutes" | "hours" | "days" : "y" | "m" | "w" | "ms" | "s" | "min" | "h" | "d"
       bucketIntervalUnit?: | "BASE" | "K" | "M" | "B"
       type: number
+      numberOfBuckets?: number
+      otherBucketPercentage?: number
     }
   }
   type: CT
@@ -152,6 +154,8 @@ export type ComponentRequestInfo = {
     "parameters"?: any[]
     "aggregation"?: string
     "granularities"?: GranularitiesType[]
+    numBuckets?: number
+    otherBucketPercentage?: number
   }[]
   "filterList": {
     "type": "FilterList"
@@ -166,6 +170,6 @@ export type ComponentRequestInfo = {
 
 export type ChartDataResponse = {
   headers: string[]
-  rows: string[][]
+  rows: [string, string][] | [{from: string, to?: string}, string][]
   status: "Success"
 }

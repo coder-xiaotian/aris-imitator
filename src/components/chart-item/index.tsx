@@ -54,27 +54,32 @@ export default memo(({chartConfig, aliasMap, metaData}: ChartProps) => {
     },
     selections: [...chartConfig.requestState.dimensions?.map((d, i) => {
       const colData = getColData(d.alias, aliasMap, metaData)
-      let config: any
+      const selection: any = {
+        type: chartConfig.type !== ChartType.DIST && chartConfig.type !== ChartType.TIME ? 'Standard' as const : 'Distribution' as const,
+        key: colData!.key,
+        asColumn: `x${i}`,
+      }
       if (chartConfig.type === ChartType.TIME) {
-        config = {
+        selection.config = {
           type: "timeDistributionConfig",
           interval: chartConfig.requestState.options?.bucketInterval,
           timeUnit: chartConfig.requestState.options?.timeUnit
         }
       } else if (chartConfig.type === ChartType.DIST) {
-        config = {
-          interval: calcBucketIntervalVal(chartConfig.requestState.options?.bucketIntervalUnit || chartConfig.requestState.options?.timeUnit,
-            chartConfig.requestState.options?.bucketInterval ?? 0, "multiply"),
-          type: "distributionConfig"
+        if (chartConfig.requestState.options!.type === 1) {
+          selection.config = {
+            interval: calcBucketIntervalVal(chartConfig.requestState.options?.bucketIntervalUnit || chartConfig.requestState.options?.timeUnit,
+              chartConfig.requestState.options?.bucketInterval ?? 0, "multiply"),
+            type: "distributionConfig"
+          }
+        } else {
+          selection.numBuckets = chartConfig.requestState.options!.numberOfBuckets! + (chartConfig.requestState.options?.otherBucketPercentage ? 1 : 0)
+          selection.otherBucketPercentage = chartConfig.requestState.options?.otherBucketPercentage
+          selection.type = "AutoDistribution"
         }
       }
 
-      return {
-        type: chartConfig.type !== ChartType.DIST && chartConfig.type !== ChartType.TIME ? 'Standard' as const : 'Distribution' as const,
-        key: colData!.key,
-        asColumn: `x${i}`,
-        config
-      }
+      return selection
     }) ?? [], ...chartConfig.requestState.measureConfigs?.map((m, i) => {
       const colData = getColData(m.alias, aliasMap, metaData)
       const type = /*chartConfig.type !== ChartType.DIST && chartConfig.type !== ChartType.TIME ?*/
@@ -195,9 +200,6 @@ export default memo(({chartConfig, aliasMap, metaData}: ChartProps) => {
     }
     setChartOptions(opt)
   }
-  function handleDistOptions() {
-
-  }
   const handleDataMap = {
     [ComponentType.CHART as string]: {
       [ChartType.LINE as string]: handleOptions,
@@ -219,13 +221,25 @@ export default memo(({chartConfig, aliasMap, metaData}: ChartProps) => {
     }, [] as number[]) // headers中x轴数据列的索引列表
     let dataSource = data.rows
     if (chartConfig.type === ChartType.DIST) {
-      dataSource = dataSource.map((cols, i) => {
-        cols.push(`${cols[dIndexs[0]]}-${dataSource[i+1]?.[dIndexs[0]]}`)
-        return cols
-      })
+      // 分配图数据处理
+      if (chartConfig.requestState.options!.type === 1) {
+        // @ts-ignore
+        dataSource = dataSource.map((cols, i) => {
+          cols.push(dataSource[i+1] ? `${cols[dIndexs[0]]}-${dataSource[i+1]?.[dIndexs[0]]}` : `>=${cols[dIndexs[0]]}`)
+          return cols
+        })
+      } else {
+        // @ts-ignore
+        dataSource = dataSource.map((cols, i) => {
+          // @ts-ignore
+          cols.push(cols[dIndexs[0]].to ? `${cols[dIndexs[0]].from}-${cols[dIndexs[0]].to}` : `>=${cols[dIndexs[0]].from}`)
+          return cols
+        })
+      }
     } else {
       if (dIndexs.length) {
         // 将数据中的x轴数据拼接成一列放在最后一列
+        // @ts-ignore
         dataSource = dataSource.map(cols => {
           let dName = cols[dIndexs[0]]
           for (let i = 1; i < dIndexs.length; i++) {
