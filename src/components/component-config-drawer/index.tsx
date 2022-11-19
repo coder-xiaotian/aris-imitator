@@ -71,12 +71,16 @@ export default ({configing, onClose, aliasMap, usedAliases, onChangeConfig}: Com
                                                      usedAliases={usedAliases}
                                                      onChange={onChangeConfig}/>,
     [OptionType.VIEW_CONFIG.toString()]: <ViewConfig/>,
-    [OptionType.DIMENSION_CONFIG.toString()]: <DimensionConfig configing={configing}
+    [OptionType.DIMENSION_CONFIG.toString()]: <DimensionConfig configing={configing!}
                                                                onChange={onChangeConfig}
                                                                id={settingWhat.id}
                                                                name={settingWhat.name}
     />,
-    [OptionType.QUOTA_CONFIG.toString()]: <MeasureConfig/>
+    [OptionType.QUOTA_CONFIG.toString()]: <MeasureConfig id={settingWhat.id}
+                                                         configing={configing!}
+                                                         name={settingWhat.name}
+                                                         onChange={onChangeConfig}
+    />
   }
   return (
     <Drawer open={!!configing}
