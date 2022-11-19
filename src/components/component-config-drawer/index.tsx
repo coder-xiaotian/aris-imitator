@@ -1,6 +1,6 @@
 import {Button, Drawer, Select} from "antd";
 import {AliasMapping, ComponentConfig} from "../../apis/typing";
-import {useContext, useState} from "react";
+import {useContext, useEffect, useState} from "react";
 import {DashBoardContext} from "@/components/layouts/dashboard-layout";
 import DataConfig from "@/components/component-config-drawer/data-config";
 import ViewConfig from "@/components/component-config-drawer/view-config";
@@ -56,6 +56,13 @@ export default ({configing, onClose, aliasMap, usedAliases, onChangeConfig}: Com
     id: OptionType.DATA_CONFIG.toString(),
     name: '',
   })
+  useEffect(() => {
+    setSettingWhat({
+      type: OptionType.DATA_CONFIG.toString(),
+      id: OptionType.DATA_CONFIG.toString(),
+      name: '',
+    })
+  }, [configing?.requestState.id])
   function handleChangeSettingWhat(v: string) {
     const [type, id, name] = v.split(':')
     setSettingWhat({
@@ -71,16 +78,20 @@ export default ({configing, onClose, aliasMap, usedAliases, onChangeConfig}: Com
                                                      usedAliases={usedAliases}
                                                      onChange={onChangeConfig}/>,
     [OptionType.VIEW_CONFIG.toString()]: <ViewConfig/>,
-    [OptionType.DIMENSION_CONFIG.toString()]: <DimensionConfig configing={configing!}
-                                                               onChange={onChangeConfig}
-                                                               id={settingWhat.id}
-                                                               name={settingWhat.name}
-    />,
-    [OptionType.QUOTA_CONFIG.toString()]: <MeasureConfig id={settingWhat.id}
-                                                         configing={configing!}
-                                                         name={settingWhat.name}
-                                                         onChange={onChangeConfig}
-    />
+    [OptionType.DIMENSION_CONFIG.toString()]: (
+      settingWhat.id in (configing?.viewState.dimensions ?? {}) && <DimensionConfig configing={configing!}
+                                                                            onChange={onChangeConfig}
+                                                                            id={settingWhat.id}
+                                                                            name={settingWhat.name}
+      />
+    ),
+    [OptionType.QUOTA_CONFIG.toString()]: (
+      settingWhat.id in (configing?.viewState.measures ?? {}) && <MeasureConfig id={settingWhat.id}
+                                                                        configing={configing!}
+                                                                        name={settingWhat.name}
+                                                                        onChange={onChangeConfig}
+      />
+    )
   }
   return (
     <Drawer open={!!configing}

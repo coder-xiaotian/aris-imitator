@@ -200,7 +200,12 @@ export default ({configing, aliasMap, usedAliases, onChange}: DataConfigProps) =
           <Label title="图表类型">
             <Select className='w-full'
                     value={configing?.type}
-                    onChange={v => onChange(produce(configing!, draft => {draft.type = v}))}
+                    onChange={v => onChange(produce(configing!, draft => {
+                      draft.type = v
+                      Object.values(draft.viewState.measures).forEach(m => {
+                        delete m.chartType
+                      })
+                    }))}
                     options={[
                       {label: '表', value: ChartType.GRID},
                       {label: '饼图', value: ChartType.PIE},

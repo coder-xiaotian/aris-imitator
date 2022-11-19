@@ -148,7 +148,9 @@ export default memo(({chartConfig, aliasMap, metaData}: ChartProps) => {
       animationDurationUpdate: 1000,
       series: Object.keys(config.viewState.measures).map((key, i) => {
         const viewMeasure = config.viewState.measures[key]
-        const type = CHART_TYPE_MAP[viewMeasure.chartType] || CHART_TYPE_MAP[config.type]
+        const type = ((viewMeasure.chartType === "column" || viewMeasure.chartType === "line" || viewMeasure.chartType === "area")
+                        ? CHART_TYPE_MAP[viewMeasure.chartType] : undefined)
+                          || CHART_TYPE_MAP[config.type]
         const res: SeriesOption = {}
         // 设置名称
         if (viewMeasure.useNameAsTitle) {
@@ -187,8 +189,10 @@ export default memo(({chartConfig, aliasMap, metaData}: ChartProps) => {
         // @ts-ignore
         res.encode = encode
         // @ts-ignore
-        res.areaStyle = viewMeasure.chartType === ChartType.AREA ? {}
+        res.areaStyle = (viewMeasure.chartType === "area" || viewMeasure.chartType === "areaspline") ? {}
                           : config.type === ChartType.AREA ? {} : undefined
+        // @ts-ignore
+        res.smooth = viewMeasure.chartType === "spline" || viewMeasure.chartType === "areaspline"
         res.universalTransition = true
         res.id = key
         return res

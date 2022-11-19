@@ -68,7 +68,7 @@ export type ComponentConfig<CT = `${ChartType}`> = {
     }
     measures: {
       [key: string]: {
-        chartType: "area" | "spline" | "areaspline" | "line" | "column"
+        chartType?: "area" | "spline" | "areaspline" | "line" | "column"
         displayName?: string
         colorHex: string
         formatting: number
