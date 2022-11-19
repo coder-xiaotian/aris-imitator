@@ -14,6 +14,7 @@ import {Spin} from "antd";
 import ResizeObserver from "rc-resize-observer";
 import AddComDrawer from "@/components/add-com-drawer";
 import {v4 as uuid} from "uuid";
+import produce from "immer";
 
 function getLayoutXY(layouts: Layout[], l: Layout) {
   l.x = 0;
@@ -30,7 +31,7 @@ function getLayoutXY(layouts: Layout[], l: Layout) {
   }
   return l;
 }
-export type ConfigChangeHandler = (newChart: ComponentConfig, newAliasMap?: AliasMapping) => void
+export type ConfigChangeHandler = (newChart: ComponentConfig, newAliasMap?: AliasMapping, usedAliases?: string[]) => void
 const DashBoard = () => {
   // 是否编辑模式
   const {isEditMode, metaData, openAddCom, closeAddCom} = useContext(DashBoardContext)
@@ -57,34 +58,36 @@ const DashBoard = () => {
   let charts = dashboardData?.content?.configurationState?.charts ?? []
   const aliasMap = dashboardData?.aliasMapping ?? {special: {}, normal: {}, script: {}}
   const usedAliases = dashboardData?.content.usedAliases ?? []
-  const handleChangeConfig: ConfigChangeHandler = (newChart, newAliasMap) => {
-    charts.splice(configingIndex, 1, {config: newChart, layout: charts[configingIndex].layout})
-    if (newAliasMap) {
-      dashboardData!.aliasMapping = newAliasMap
-    }
-    // 计算已使用的别名
-    dashboardData!.content.usedAliases = charts.reduce((res, item) => {
-      if (item.config.requestState.dimensions) {
-        res.push(...item.config.requestState.dimensions.map(d => d.alias))
+  const handleChangeConfig: ConfigChangeHandler = (newChart, newAliasMap, usedAliases) => {
+    setDashboardData(produce(dashboardData!, draft => {
+      const charts = draft.content.configurationState.charts
+      charts.splice(configingIndex, 1, {config: newChart, layout: charts[configingIndex].layout})
+      if (newAliasMap) {
+        draft!.aliasMapping = newAliasMap
       }
-      if (item.config.requestState.measureConfigs) {
-        res.push(...item.config.requestState.measureConfigs.map(m => m.alias))
+      if (usedAliases) {
+        draft!.content.usedAliases = usedAliases
       }
-      // if (item.config.requestState.measureConfig) {
-      //   res.push(item.config.requestState.measureConfig.alias)
-      // }
-      // if (item.config.requestState.selections) {
-      //   res.push(...item.config.requestState.selections.map(s => s.alias))
-      // }
-      if (item.config.alias) {
-        res.push(...Object.values(item.config.alias))
-      }
-      return res
-    }, [] as string[])
-
-    setDashboardData({
-      ...dashboardData,
-    } as DashBoardInfo)
+      // 计算已使用的别名
+      draft!.content.usedAliases = charts.reduce((res, item) => {
+        if (item.config.requestState.dimensions) {
+          res.push(...item.config.requestState.dimensions.map(d => d.alias))
+        }
+        if (item.config.requestState.measureConfigs) {
+          res.push(...item.config.requestState.measureConfigs.map(m => m.alias))
+        }
+        // if (item.config.requestState.measureConfig) {
+        //   res.push(item.config.requestState.measureConfig.alias)
+        // }
+        // if (item.config.requestState.selections) {
+        //   res.push(...item.config.requestState.selections.map(s => s.alias))
+        // }
+        if (item.config.alias) {
+          res.push(...Object.values(item.config.alias))
+        }
+        return res
+      }, [] as string[])
+    }))
     // 调接口，更新dashboard数据
     // updateDashboardDataReq(dashboardData)
   }
@@ -147,18 +150,17 @@ const DashBoard = () => {
         subtitle: ''
       }
     }
-    setDashboardData({
-      ...dashboardData,
-      content: {
-        configurationState: {charts: [...charts, {config: newConfig, layout: l}]}
-      }
-    } as DashBoardInfo)
+
+    setDashboardData(produce(dashboardData!, draft => {
+      draft.content.configurationState.charts.push({config: newConfig, layout: l})
+    }))
     closeAddCom()
     setConfigingIndex(charts.length)
   }
   function handleDeleteCom(i: number) {
-    charts.splice(i, 1)
-    setDashboardData({...dashboardData} as DashBoardInfo)
+    setDashboardData(produce(dashboardData!, draft => {
+      draft.content.configurationState.charts.splice(i, 1)
+    }))
     setConfigingIndex(NaN)
   }
 

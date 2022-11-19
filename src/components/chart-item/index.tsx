@@ -220,7 +220,7 @@ export default memo(({chartConfig, aliasMap, metaData}: ChartProps) => {
       return res
     }, [] as number[]) // headers中x轴数据列的索引列表
     let dataSource = data.rows
-    if (chartConfig.type === ChartType.DIST) {
+    if (chartConfig.type === ChartType.DIST && dIndexs.length) {
       // 分配图数据处理
       if (chartConfig.requestState.options!.type === 1) {
         // @ts-ignore
@@ -230,7 +230,7 @@ export default memo(({chartConfig, aliasMap, metaData}: ChartProps) => {
         })
       } else {
         // @ts-ignore
-        dataSource = dataSource.map((cols, i) => {
+        dataSource = dataSource.map((cols) => {
           // @ts-ignore
           cols.push(cols[dIndexs[0]].to ? `${cols[dIndexs[0]].from}-${cols[dIndexs[0]].to}` : `>=${cols[dIndexs[0]].from}`)
           return cols

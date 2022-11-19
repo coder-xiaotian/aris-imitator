@@ -13,6 +13,7 @@ import {ConfigChangeHandler} from "@/pages/analyses/[aid]";
 import AttrItem, {AggMethodInfo} from "@/components/component-config-drawer/data-config/attr-item";
 import EditAggDrawer from "@/components/component-config-drawer/data-config/edit-agg-drawer";
 import Bucket, {getType1Opt} from "@/components/component-config-drawer/data-config/bucket";
+import produce from "immer";
 
 type DataConfigProps = {
   configing: ComponentConfig | undefined
@@ -29,7 +30,7 @@ export default ({configing, aliasMap, usedAliases, onChange}: DataConfigProps) =
   const [openAttrDrawer, setOpenAttrDrawer] = useState<'dimension' | 'measure'>()
   const [attrMenus, setAttrMenus] = useState<FunComponentProps<typeof AttributeDrawer>['attrMenus']>([])
   useEffect(() => {
-    if (!metaData && !openAttrDrawer) return
+    if (!metaData || !openAttrDrawer) return
 
     function getExcludeKeys() {
       if (openAttrDrawer === 'dimension') { // 把已选的维度排除掉
@@ -54,10 +55,13 @@ export default ({configing, aliasMap, usedAliases, onChange}: DataConfigProps) =
         title: tableData.tableInfo.name,
         subTitle: prevTitles.join('/'),
         children: tableData.columns.filter(col => {
-          return !col.isInternal && !excludeTypes.includes(col.type) &&
-            (isDist && col.flags.includes('distributable')) && (
+          let condition = !col.isInternal && !excludeTypes.includes(col.type) && (
             col.usage !== 'NONE' ? !excludeKeys.includes(col.usage) : !excludeKeys.includes(col.key)
           )
+          if (isDist) {
+            condition = condition && col.flags.includes('distributable')
+          }
+          return condition
         })
       })
       for(let item of tableData.children) {
@@ -69,31 +73,23 @@ export default ({configing, aliasMap, usedAliases, onChange}: DataConfigProps) =
     setAttrMenus(getMenus(metaData!.rootTable))
   }, [metaData, openAttrDrawer])
   function handleSelectAttr(col: ColumnInfo) {
-    let alias = ''
+    let alias = '', newAliasMap = aliasMap
     // 处理别名映射
     if (col.technicalName.type === 'SYSTEM') {
       if (!Object.values(aliasMap.special).includes(col.usage)) { // 别名没在map中
         alias = uuid()
-        aliasMap = {
-          ...aliasMap,
-          special: {
-            ...aliasMap.special,
-            [alias]: col.usage
-          }
-        }
+        newAliasMap = produce(aliasMap, draft => {
+          draft.special.alias = col.usage
+        })
       } else { // 别名已在map中
         alias = Object.keys(aliasMap.special).find(key => aliasMap.special[key] === col.usage)!
       }
     } else if (col.technicalName.type === 'CUSTOM') {
       if (!Object.values(aliasMap.normal).includes(col.key)) {
         alias = uuid()
-        aliasMap = {
-          ...aliasMap,
-          normal: {
-            ...aliasMap.normal,
-            [alias]: col.key
-          }
-        }
+        newAliasMap = produce(aliasMap, draft => {
+          draft.normal.alias = col.key
+        })
       } else {
         alias = Object.keys(aliasMap.normal).find(key => aliasMap.normal[key] === col.key)!
       }
@@ -102,122 +98,84 @@ export default ({configing, aliasMap, usedAliases, onChange}: DataConfigProps) =
     // todo 添加维度指标时把viewState中的配置加上
     if (openAttrDrawer === 'dimension') { // 添加维度
       if (configing?.type === ChartType.DIST) {
-        onChange({
-          ...configing!,
-          requestState: {
-            ...configing!.requestState,
-            dimensions: [...configing?.requestState?.dimensions ?? [], {
-              id: uuid(),
-              alias,
-              type: col.type
-            }],
-            options: getType1Opt(col.type)
-          }
-        }, aliasMap)
-      } else {
-        onChange({
-          ...configing!,
-          requestState: {
-            ...configing!.requestState,
-            dimensions: [...configing?.requestState?.dimensions ?? [], {
-              id: uuid(),
-              alias,
-              type: col.type
-            }]
-          }
-        }, aliasMap)
-      }
-    } else if (openAttrDrawer === 'measure') { // 添加指标
-      onChange({
-        ...configing!,
-        requestState: {
-          ...configing!.requestState,
-          measureConfigs: [...configing!.requestState?.measureConfigs ?? [], {
+        onChange(produce(configing!, draft => {
+          draft.requestState.dimensions = [...draft.requestState.dimensions ?? [], {
             id: uuid(),
             alias,
-            type: col.type,
-            aggregation: col.aggregationConfig.defaultAggregation
+            type: col.type
           }]
-        }
-      }, aliasMap)
+          draft.requestState.options = getType1Opt(col.type)
+        }), newAliasMap)
+      } else {
+        onChange(produce(configing!, draft => {
+          draft.requestState.dimensions = [...draft.requestState.dimensions ?? [], {
+            id: uuid(),
+            alias,
+            type: col.type
+          }]
+        }), newAliasMap)
+      }
+    } else if (openAttrDrawer === 'measure') { // 添加指标
+      onChange(produce(configing!, draft => {
+        draft.requestState.measureConfigs = [...draft.requestState.measureConfigs ?? [], {
+          id: uuid(),
+          alias,
+          type: col.type,
+          aggregation: col.aggregationConfig.defaultAggregation
+        }]
+      }), newAliasMap)
     }
   }
   function judgeDelAlias(alias: string) {
     const delUsedAliasIndex = usedAliases.findIndex(id => id === alias)
-    usedAliases.splice(delUsedAliasIndex, 1)
-    if (usedAliases.findIndex(id => id === alias) === -1) {
-      delete aliasMap.special[alias]
-      delete aliasMap.normal[alias]
-      delete aliasMap.script[alias]
-      aliasMap = {...aliasMap}
-    }
-    return aliasMap
+    const newUsedAliases = produce(usedAliases, draft => {
+      draft.splice(delUsedAliasIndex, 1)
+    })
+    const newAliasMap = produce(aliasMap, draft => {
+      if (delUsedAliasIndex === -1) {
+        delete draft.special[alias]
+        delete draft.normal[alias]
+        delete draft.script[alias]
+      }
+    })
+
+    return [newAliasMap, newUsedAliases] as const
   }
   function handleDeleteDimension(i: number) {
-    const [delItem] = dimensions.splice(i, 1)
-    delete viewState!.dimensions[delItem.id]
-    // 判断是否需要删掉aliasMap中的别名
-    judgeDelAlias(delItem.alias)
-
-    onChange({
-      ...configing!,
-      requestState: {
-        ...configing!.requestState,
-        dimensions
-      }
-    }, aliasMap)
+    const delItem = dimensions[i]
+    // 判断是否需要删掉aliasMap中的别名，然后删除掉
+    const [newAliasMap, newUsedAliases] = judgeDelAlias(delItem.alias)
+    onChange(produce(configing!, draft => {
+      draft.requestState.dimensions!.splice(i, 1)
+      delete draft.viewState!.dimensions[delItem.id]
+    }), newAliasMap, newUsedAliases)
   }
   function handleDeleteMeasure(i: number) {
-    const [delItem] = measures.splice(i, 1)
-    delete viewState!.measures[delItem.id]
+    const delItem = measures[i]
     // 判断是否需要删掉aliasMap中的别名
-    judgeDelAlias(delItem.alias)
+    const [newAliasMap, newUsedAliases] = judgeDelAlias(delItem.alias)
 
-    onChange({
-      ...configing!,
-      requestState: {
-        ...configing!.requestState,
-        measureConfigs: measures
-      }
-    })
+    onChange(produce(configing!, draft => {
+      draft.requestState.measureConfigs!.splice(i, 1)
+      delete draft.viewState.measures[delItem.id]
+    }), newAliasMap, newUsedAliases)
   }
   function handleSelectDimensionGranularity(i: number, value: any) {
-    dimensions.splice(i, 1, {
-      ...dimensions[i],
-      granularities: value
-    })
-    onChange({
-      ...configing!,
-      requestState: {
-        ...configing!.requestState,
-        dimensions
-      }
-    })
+    onChange(produce(configing!, draft => {
+      draft.requestState.dimensions![i].granularities = value
+    }))
   }
   function handleSelectMeasureGranularity(i: number, value: any) {
-    measures.splice(i, 1, {
-      ...measures[i],
-      granularities: value
-    })
-    onChange({
-      ...configing!,
-      requestState: {
-        ...configing!.requestState,
-        measureConfigs: measures
-      }
-    })
+    onChange(produce(configing!, draft => {
+      draft.requestState.measureConfigs![i].granularities = value
+    }))
   }
 
   const [editAggInfo, setEditAggInfo] = useState<{curAgg: AggMethodInfo, colInfo: ColumnInfo, index: number}>()
   function handleChangeAgg(agg: Aggregation) {
-    measures[editAggInfo!.index].aggregation = agg
-    onChange({
-      ...configing!,
-      requestState: {
-        ...configing!.requestState,
-        measureConfigs: [...measures]
-      }
-    })
+    onChange(produce(configing!, draft => {
+      draft.requestState.measureConfigs![editAggInfo!.index].aggregation = agg
+    }))
     setEditAggInfo(undefined)
   }
 
@@ -242,10 +200,7 @@ export default ({configing, aliasMap, usedAliases, onChange}: DataConfigProps) =
           <Label title="图表类型">
             <Select className='w-full'
                     value={configing?.type}
-                    onChange={v => onChange({
-                      ...configing!,
-                      type: v
-                    })}
+                    onChange={v => onChange(produce(configing!, draft => {draft.type = v}))}
                     options={[
                       {label: '表', value: ChartType.GRID},
                       {label: '饼图', value: ChartType.PIE},
@@ -258,25 +213,15 @@ export default ({configing, aliasMap, usedAliases, onChange}: DataConfigProps) =
         )
       }
       <Label title='标题'>
-        <Input value={viewState?.caption} onChange={e => onChange({
-          ...configing!,
-          viewState: {
-            ...viewState!,
-            caption: e.target.value
-          }
-        })}/>
+        <Input value={viewState?.caption} onChange={e => onChange(produce(configing!, draft => {
+          draft.viewState.caption = e.target.value
+        }))}/>
         {
           !viewState?.hasSubtitle && (
             <Button className='!text-blue-400 hover:!text-blue-500 !flex !justify-between !items-center'
                     icon={<PlusOutlined/>}
                     type='text'
-                    onClick={() => onChange({
-                      ...configing!,
-                      viewState: {
-                        ...viewState!,
-                        hasSubtitle: true
-                      }
-                    })}
+                    onClick={() => onChange(produce(configing!, draft => {draft.viewState.hasSubtitle = true}))}
             >添加副标题</Button>
           )
         }
@@ -285,23 +230,13 @@ export default ({configing, aliasMap, usedAliases, onChange}: DataConfigProps) =
         viewState?.hasSubtitle && (
           <Label title='副标题'>
             <div className='flex justify-center items-center'>
-              <Input value={viewState!.subtitle} onChange={e => onChange({
-                ...configing!,
-                viewState: {
-                  ...viewState!,
-                  subtitle: e.target.value
-                }
-              })}/>
+              <Input value={viewState!.subtitle} onChange={e => onChange(produce(configing!, draft => {draft.viewState.subtitle = e.target.value}))}/>
               <Button icon={<DeleteOutlined/>} type='text'
                       className='!text-gray-400 hover:!text-red-400'
-                      onClick={() => onChange({
-                        ...configing!,
-                        viewState: {
-                          ...viewState!,
-                          hasSubtitle: false,
-                          subtitle: ''
-                        }
-                      })}
+                      onClick={() => onChange(produce(configing!, draft => {
+                        draft.viewState.hasSubtitle = false
+                        draft.viewState.subtitle = ""
+                      }))}
               />
             </div>
           </Label>
@@ -376,13 +311,7 @@ export default ({configing, aliasMap, usedAliases, onChange}: DataConfigProps) =
               {value: 'hours', label: '小时'}, {value: 'days', label: '天'}, {value: 'weeks', label: '周'},
               {value: 'months', label: '月'}, {value: 'years', label: '年'}]}
                     value={configing.requestState.options?.timeUnit}
-                    onChange={v => onChange({
-                      ...configing,
-                      requestState: {
-                        ...configing.requestState,
-                        options: {...configing.requestState.options!, timeUnit: v}
-                      }
-                    })}
+                    onChange={v => onChange(produce(configing!, draft => {draft.requestState.options!.timeUnit = v}))}
             />
           </Label>
         )
@@ -394,25 +323,22 @@ export default ({configing, aliasMap, usedAliases, onChange}: DataConfigProps) =
       }
       {configing?.type !== ChartType.TIME && configing?.type !== ChartType.PIE && configing?.type !== ChartType.DIST && (
         <InlineLabel title='堆叠'>
-          <Switch checked={configing?.viewState.isStacked} onChange={v => onChange({
-            ...configing!,
-            viewState: {...configing!.viewState, isStacked: v}
-          })}/>
+          <Switch checked={configing?.viewState.isStacked} onChange={v => onChange(produce(configing!, draft => {
+            draft.viewState.isStacked = v
+          }))}/>
         </InlineLabel>
       )}
       {configing?.type !== ChartType.TIME && configing?.type !== ChartType.PIE && configing?.type !== ChartType.DIST && (
         <InlineLabel title='反转轴'>
-          <Switch checked={configing?.viewState.isInverted} onChange={v => onChange({
-            ...configing!,
-            viewState: {...configing!.viewState, isInverted: v}
-          })}/>
+          <Switch checked={configing?.viewState.isInverted} onChange={v => onChange(produce(configing!, draft => {
+            draft.viewState.isInverted = v
+          }))}/>
         </InlineLabel>
       )}
       <InlineLabel title='包括空值'>
-        <Switch checked={configing?.requestState.includeNullValues} onChange={v => onChange({
-          ...configing!,
-          requestState: {...configing!.requestState, includeNullValues: v}
-        })}/>
+        <Switch checked={configing?.requestState.includeNullValues} onChange={v => onChange(produce(configing!, draft => {
+          draft.requestState.includeNullValues = v
+        }))}/>
       </InlineLabel>
       <AttributeDrawer category={openAttrDrawer}
                        onClose={() => setOpenAttrDrawer(undefined)}
