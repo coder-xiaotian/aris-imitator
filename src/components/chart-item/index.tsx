@@ -20,7 +20,6 @@ import {XAXisOption, YAXisOption} from "echarts/types/dist/shared";
 import abbreviate from 'number-abbreviate'
 import {OptionEncode} from "echarts/types/src/util/types";
 import {calcBucketIntervalVal} from "@/components/component-config-drawer/data-config/bucket";
-import ecStat, {histogram} from 'echarts-stat'
 
 type ChartProps = {
   chartConfig: ComponentConfig

@@ -79,7 +79,7 @@ export default ({configing, aliasMap, usedAliases, onChange}: DataConfigProps) =
       if (!Object.values(aliasMap.special).includes(col.usage)) { // 别名没在map中
         alias = uuid()
         newAliasMap = produce(aliasMap, draft => {
-          draft.special.alias = col.usage
+          draft.special[alias] = col.usage
         })
       } else { // 别名已在map中
         alias = Object.keys(aliasMap.special).find(key => aliasMap.special[key] === col.usage)!
@@ -107,6 +107,7 @@ export default ({configing, aliasMap, usedAliases, onChange}: DataConfigProps) =
           draft.requestState.options = getType1Opt(col.type)
         }), newAliasMap)
       } else {
+        console.log(alias, newAliasMap)
         onChange(produce(configing!, draft => {
           draft.requestState.dimensions = [...draft.requestState.dimensions ?? [], {
             id: uuid(),
