@@ -38,7 +38,7 @@ export default ({isDimension, attrInfo, aliasMap, metaData, onDelete, onSelectGr
              title={(
                <span className='!text-gray-500 !text-thin'>
                  {text}
-                 {`(${ColumnType[col!.valueCalculationType]})`}
+                 {`(${ColumnType[col?.valueCalculationType]})`}
                </span>
              )}
     >

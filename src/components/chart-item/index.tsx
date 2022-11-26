@@ -127,7 +127,7 @@ export default memo(({chartConfig, aliasMap, metaData}: ChartProps) => {
       show: !isPie
     }
     if (config.viewState.isInverted) {
-      xAxis = {type: 'value', axisLabel: {formatter: abbrFormatter}}
+      xAxis = {type: 'value', axisLabel: {formatter: abbrFormatter}, splitLine: {show: false}}
       yAxis = {type: 'category'}
     }
     const opt: EChartsOption = {
@@ -139,11 +139,14 @@ export default memo(({chartConfig, aliasMap, metaData}: ChartProps) => {
       xAxis,
       yAxis,
       tooltip: {
-        trigger: isPie ? 'item' : 'axis'
+        trigger: isPie ? 'item' : 'axis',
+        axisPointer: {
+          type: 'shadow',
+        }
       },
       legend: {
         type: 'scroll',
-        bottom: 0
+        bottom: 0,
       },
       animationDurationUpdate: 1000,
       series: Object.keys(config.viewState.measures).map((key, i) => {
@@ -258,7 +261,7 @@ export default memo(({chartConfig, aliasMap, metaData}: ChartProps) => {
   }, [data, chartConfig.viewState, chartConfig.type])
 
   const comMap = {
-    [ComponentType.CHART as string]: <Chart options={chartOptions}/>
+    [ComponentType.CHART as string]: <Chart options={chartOptions} chartType={chartConfig.type} />
   }
   const RenderCom = comMap[chartConfig.configType]
   const comRef = useRef<{resize: () => void}>()

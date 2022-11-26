@@ -160,7 +160,12 @@ export type ComponentRequestInfo = {
   "filterList": {
     "type": "FilterList"
     "mode": "AND"
-    "filters": any[]
+    "filters": {
+      compId: string
+      field: string
+      type: "ValueFilter"
+      values: (string | null)[]
+    }[]
   }
   sortCriteria: any[]
   "includeNullValues": boolean
