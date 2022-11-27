@@ -21,7 +21,7 @@ export default ({open, aggs, onClose, onSelect, selectedAttr, selectedAgg}: Edit
         <span className='text-base font-medium'>编辑聚集</span>
         <Button type='text' icon={<CloseOutlined/>} onClick={onClose}/>
       </div>
-      <div className='overflow-auto flex-grow'>
+      <div className='overflow-auto grow'>
         <div>
           <>
             <div className='flex justify-start items-center pl-8 py-2'>

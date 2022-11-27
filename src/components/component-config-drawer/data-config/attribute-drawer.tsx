@@ -61,7 +61,7 @@ export default ({category, attrMenus, onClose, onSelect}: AttributeDrawerProps) 
           onClose()
         }}/>
       </div>
-      <div className='overflow-auto flex-grow'>
+      <div className='overflow-auto grow'>
         <div>
           {selectedAttrInfo.col ? (
             <>
@@ -89,7 +89,7 @@ export default ({category, attrMenus, onClose, onSelect}: AttributeDrawerProps) 
             <Button onClick={() => {
               setSelectedAttrInfo({col: undefined})
               onClose()
-            }} className='flex-grow !ml-2'>取消</Button>
+            }} className='grow !ml-2'>取消</Button>
           </Button.Group>
         ) : <Button type='primary' block onClick={onClose}>完成</Button>}
       </div>
