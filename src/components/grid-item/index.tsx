@@ -7,11 +7,12 @@ import {CopyOutlined, DeleteOutlined, SettingOutlined} from "@ant-design/icons";
 type GridItemProps = {
   disabled: boolean
   selected: boolean
+  scrollIntoView: boolean
   onConfig: () => void
   onDelete: () => void
 }
 export default forwardRef<HTMLDivElement, CardGridProps & GridItemProps>((props, ref) => {
-  const {className, children, disabled, selected, onConfig, onDelete, ...otherProps} = props
+  const {className, children, disabled, selected, scrollIntoView, onConfig, onDelete, ...otherProps} = props
   const [openDel, setOpenDel] = useState(false)
   function handleRef(dom: HTMLDivElement) {
     if (!dom) return
@@ -19,7 +20,7 @@ export default forwardRef<HTMLDivElement, CardGridProps & GridItemProps>((props,
     if (typeof ref !== 'function') {
       ref!.current = dom
     }
-    if(selected) {
+    if(scrollIntoView) {
       dom.scrollIntoView({behavior: 'smooth'})
     }
   }

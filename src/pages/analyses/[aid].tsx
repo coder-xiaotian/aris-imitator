@@ -34,7 +34,7 @@ function getLayoutXY(layouts: Layout[], l: Layout) {
 export type ConfigChangeHandler = (newChart: ComponentConfig, newAliasMap?: AliasMapping, usedAliases?: string[]) => void
 const DashBoard = () => {
   // 是否编辑模式
-  const {isEditMode, metaData, openAddCom, closeAddCom} = useContext(DashBoardContext)
+  const {isEditMode, metaData, openAddCom, closeAddCom, setFilterList} = useContext(DashBoardContext)
   const router = useRouter()
   const {aid, tab} = router.query
   const {data: dashboardData, mutate: setDashboardData, loading} = useRequest(async () => {
@@ -54,6 +54,7 @@ const DashBoard = () => {
 
   // 配置中的组件索引
   const [configingIndex, setConfigingIndex] = useState<number>(NaN)
+  const [scrollToIndex, setScrollToIndex] = useState<number>()
 
   let charts = dashboardData?.content?.configurationState?.charts ?? []
   const aliasMap = dashboardData?.aliasMapping ?? {special: {}, normal: {}, script: {}}
@@ -155,6 +156,7 @@ const DashBoard = () => {
       draft.content.configurationState.charts.push({config: newConfig, layout: l})
     }))
     closeAddCom()
+    setScrollToIndex(charts.length)
     setConfigingIndex(charts.length)
   }
   function handleDeleteCom(i: number) {
@@ -162,6 +164,40 @@ const DashBoard = () => {
       draft.content.configurationState.charts.splice(i, 1)
     }))
     setConfigingIndex(NaN)
+  }
+
+  const handleSelectFilter = (compId: string, keys: string[], values: string[]) => {
+    console.log(compId, keys, values)
+    setFilterList(draft => {
+      let replaceIndexs: number[] = []
+      for (let i = 0; i < draft.length; i++) {
+        const item = draft[i]
+        if (item.compId === compId && !item.isTemp) {
+          // @ts-ignore
+          draft[i] = null
+          replaceIndexs.push(i)
+        }
+      }
+      keys.forEach((k, i) => {
+        if (i >= replaceIndexs.length) {
+          draft.push({
+            isTemp: true,
+            compId,
+            type: "ValueFilter",
+            field: k,
+            values: values.map(v => v.split("-")[i])
+          })
+        } else {
+          draft.splice(replaceIndexs[i], 1, {
+            isTemp: true,
+            compId,
+            type: "ValueFilter",
+            field: k,
+            values: values.map(v => v.split("-")[i])
+          })
+        }
+      })
+    })
   }
 
   const [containerWidth, setContainerWidth] = useState<number>(0)
@@ -185,6 +221,7 @@ const DashBoard = () => {
                         resizeHandles: ['se'],
                       }}
                       selected={configingIndex === i}
+                      scrollIntoView={scrollToIndex === i}
                       onConfig={() => setConfigingIndex(i)}
                       onDoubleClick={() => isEditMode && setConfigingIndex(i)}
                       onDelete={() => handleDeleteCom(i)}
@@ -193,6 +230,7 @@ const DashBoard = () => {
                          chartConfig={chart.config}
                          aliasMap={aliasMap}
                          metaData={metaData!}
+                         onSelectFilter={(keys, values) => handleSelectFilter(chart.config.requestState.id, keys, values)}
               />
             </GridItem>
           ))}

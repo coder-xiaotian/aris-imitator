@@ -4,11 +4,14 @@ import {forwardRef, useEffect, useImperativeHandle, useRef} from "react";
 import {ChartType} from "../../apis/typing";
 import colors from "tailwindcss/colors";
 
+export type SelectFilterHandler = (keys: string[], values: string[]) => void
 type ChartProps = {
   options: EChartsOption,
-  chartType: `${ChartType}`
+  chartType: `${ChartType}`,
+  isInverted: boolean,
+  onSelect: SelectFilterHandler,
 }
-export default forwardRef(({options, chartType}: ChartProps, ref) => {
+export default forwardRef(({options, chartType, onSelect, isInverted}: ChartProps, ref) => {
   const containerRef = useRef<HTMLDivElement>(null)
   const echartsInsRef = useRef<EChartsType>()
   function calcBrushOption(width: number, height: number, x: number, y: number, activeDir?: "leftHandler" | "rightHandler") {
@@ -108,65 +111,74 @@ export default forwardRef(({options, chartType}: ChartProps, ref) => {
 
     const ins = echartsInsRef.current = echarts.init(containerRef.current)
     if (chartType === "column") {
+      ins.getZr().on("click", e => {
+        // 点击事件不在第一个坐标系中，则不做响应
+        if (!ins.containPixel("grid", [e.offsetX, e.offsetY])) return
 
-    }
-    ins.getZr().on("click", e => {
-      // 点击事件不在第一个坐标系中，则不做响应
-      if (!ins.containPixel("grid", [e.offsetX, e.offsetY])) return
-
-      // @ts-ignore
-      const bandWidth = ins.getModel().getComponent("xAxis").axis.getBandWidth()
-      // @ts-ignore
-      const {height, y} = ins.getModel().getComponent("grid").coordinateSystem.getRect()
-      const pixel = ins.convertFromPixel({gridIndex: 0}, [e.offsetX, e.offsetY])
-      const [x] = ins.convertToPixel({gridIndex: 0}, pixel)
-      ins.setOption({
-        graphic: calcBrushOption(bandWidth, height, x - bandWidth / 2, y),
+        // @ts-ignore
+        const ecModel = ins.getModel()
+        const dAxis = ecModel.getComponent(isInverted ? "yAxis" : "xAxis")
+        const bandWidth = dAxis.axis.getBandWidth()
+        const {height, y} = ecModel.getComponent("grid").coordinateSystem.getRect()
+        const pixel = ins.convertFromPixel({gridIndex: 0}, [e.offsetX, e.offsetY])
+        const [x] = ins.convertToPixel({gridIndex: 0}, pixel)
+        ins.setOption({
+          graphic: calcBrushOption(bandWidth, height, x - bandWidth / 2, y),
+        })
+        onSelect(ecModel.option.meta.xKeys, [dAxis.getCategories()[pixel[0]]])
       })
-    })
-    ins.on("mousedown", "graphic", ({event: downEvent, info}) => {
-      // @ts-ignore
-      const bandWidth = ins.getModel().getComponent("xAxis").axis.getBandWidth()
-      const dragId = String(downEvent?.target.id) as "leftHandler" | "rightHandler" | undefined
-      ins.setOption({
-        graphic: calcBrushOption(info.width, info.height, info.x, info.y, dragId)
-      })
+      ins.on("mousedown", "graphic", ({event: downEvent, info}) => {
+        // @ts-ignore
+        const ecModel = ins.getModel()
+        const dAxis = ecModel.getComponent(isInverted ? "yAxis" : "xAxis")
+        const bandWidth = dAxis.axis.getBandWidth()
+        const dragId = String(downEvent?.target.id) as "leftHandler" | "rightHandler" | undefined
+        ins.setOption({
+          graphic: calcBrushOption(info.width, info.height, info.x, info.y, dragId)
+        })
 
-      // @ts-ignore
-      const gridRect = ins.getModel().getComponent("grid").coordinateSystem.getRect()
-      let startX = downEvent!.offsetX
-      const isLeft = String(downEvent!.target.id) === "leftHandler"
-      let movementX: number, addNum: number, tmpInfo = {...info}
-      function handleMousemove(e: MouseEvent) {
-        movementX = e.offsetX - startX
-        if (Math.abs(movementX) < (bandWidth / 2)) return
+        const gridRect = ecModel.getComponent("grid").coordinateSystem.getRect()
+        let startX = downEvent!.offsetX
+        const isLeft = String(downEvent!.target.id) === "leftHandler"
+        let movementX: number, addNum: number, tmpInfo = {...info}
+        function handleMousemove(e: MouseEvent) {
+          movementX = e.offsetX - startX
+          if (Math.abs(movementX) < (bandWidth / 2)) return
 
-        addNum = bandWidth * Math.ceil(movementX / bandWidth)
-        startX += addNum
-        if (isLeft) {
-          tmpInfo.x += addNum
-          tmpInfo.width -= addNum
-        } else {
-          tmpInfo.width += addNum
+          addNum = bandWidth * Math.ceil(movementX / bandWidth)
+          startX += addNum
+          if (isLeft) {
+            tmpInfo.x += addNum
+            tmpInfo.width -= addNum
+          } else {
+            tmpInfo.width += addNum
+          }
+          if (tmpInfo.width < bandWidth) return // 宽度已经是最小了，不能继续拖拽
+          if (tmpInfo.x < gridRect.x || tmpInfo.x + tmpInfo.width > gridRect.x + gridRect.width) return // 到达grid边界，不能拖拽
+
+          ins.setOption({
+            graphic: calcBrushOption(tmpInfo.width, tmpInfo.height, tmpInfo.x, tmpInfo.y, dragId)
+          })
+          info.x = tmpInfo.x
+          info.width = tmpInfo.width
+          const startIndex = ins.convertFromPixel("xAxis", info.x)
+          const endIndex = ins.convertFromPixel("xAxis", info.x + info.width)
+          const values = []
+          const categories = dAxis.getCategories()
+          for (let i = startIndex; i <= endIndex; i++) {
+            values.push(categories[i])
+          }
+          onSelect(ecModel.option.meta.xKeys, values)
         }
-        console.log(tmpInfo.width)
-        if (tmpInfo.width < bandWidth) return // 宽度已经是最小了，不能继续拖拽
-        if (tmpInfo.x < gridRect.x || tmpInfo.x + tmpInfo.width > gridRect.x + gridRect.width) return
-
-        ins.setOption({
-          graphic: calcBrushOption(tmpInfo.width, tmpInfo.height, tmpInfo.x, tmpInfo.y, dragId)
-        })
-        info.x = tmpInfo.x
-        info.width = tmpInfo.width
-      }
-      document.addEventListener("mousemove", handleMousemove)
-      document.addEventListener("mouseup", () => {
-        document.removeEventListener("mousemove", handleMousemove)
-        ins.setOption({
-          graphic: calcBrushOption(info.width, info.height, info.x, info.y)
+        document.addEventListener("mousemove", handleMousemove)
+        document.addEventListener("mouseup", () => {
+          document.removeEventListener("mousemove", handleMousemove)
+          ins.setOption({
+            graphic: calcBrushOption(info.width, info.height, info.x, info.y)
+          })
         })
       })
-    })
+    }
 
     return () => ins.dispose()
   }, [containerRef.current])
@@ -174,7 +186,8 @@ export default forwardRef(({options, chartType}: ChartProps, ref) => {
     echartsInsRef.current?.setOption(options)
   }, [echartsInsRef.current, options])
   useImperativeHandle(ref, () => ({
-    resize: echartsInsRef.current?.resize
+    resize: echartsInsRef.current?.resize,
+    clearSelection: () => echartsInsRef.current?.setOption({graphic: {}})
   }))
 
   return (

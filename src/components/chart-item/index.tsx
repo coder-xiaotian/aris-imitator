@@ -11,7 +11,7 @@ import {getColData} from "@/components/component-config-drawer/utils";
 import {useDebounceFn, useRequest} from "ahooks";
 import {Spin} from "antd";
 import {MetaData} from "../../apis/metaInfo";
-import Chart from './chart'
+import Chart, {SelectFilterHandler} from './chart'
 import {EChartsOption, SeriesOption} from "echarts";
 import request from '@/utils/client-request'
 import ResizeObserver from "rc-resize-observer";
@@ -24,7 +24,8 @@ import {calcBucketIntervalVal} from "@/components/component-config-drawer/data-c
 type ChartProps = {
   chartConfig: ComponentConfig
   aliasMap: AliasMapping,
-  metaData: MetaData
+  metaData: MetaData,
+  onSelectFilter: SelectFilterHandler
 }
 const CHART_TYPE_MAP = {
   [ChartType.BAR]: 'bar' as const,
@@ -36,7 +37,7 @@ const CHART_TYPE_MAP = {
   [ChartType.GRID]: 'line' as const,
   [ChartType.SINGLE_KPI]: 'line' as const,
 }
-export default memo(({chartConfig, aliasMap, metaData}: ChartProps) => {
+export default memo(({chartConfig, aliasMap, metaData, onSelectFilter}: ChartProps) => {
   // 获取图表的数据
   const {data, loading, error} = useRequest(() => request.post<any, ChartDataResponse, ComponentRequestInfo>('/api/dataSets/data/query/simple',
     {
@@ -103,7 +104,7 @@ export default memo(({chartConfig, aliasMap, metaData}: ChartProps) => {
 
   // 根据获取的数据和配置组装echarts的options
   const [chartOptions, setChartOptions] = useState<EChartsOption>({})
-  function handleOptions(headers: string[], dataSource: any[][] | undefined, config: ComponentConfig) {
+  function handleOptions(headers: string[], dataSource: any[][] | undefined, config: ComponentConfig, meta: {xNames: string[], xKeys: string[]}) {
     const isPie = config.type === ChartType.PIE
     let xAxis: XAXisOption = {
       type: 'category',
@@ -113,7 +114,10 @@ export default memo(({chartConfig, aliasMap, metaData}: ChartProps) => {
         // @ts-ignore
         overflow: 'truncate'
       },
-      show: !isPie
+      show: !isPie,
+      name: meta.xNames.join(" / "),
+      nameLocation: "middle",
+      nameGap: 50,
     }
     const abbrFormatter = (value: number | string) => {
       return abbreviate(value)
@@ -127,9 +131,14 @@ export default memo(({chartConfig, aliasMap, metaData}: ChartProps) => {
     }
     if (config.viewState.isInverted) {
       xAxis = {type: 'value', axisLabel: {formatter: abbrFormatter}, splitLine: {show: false}}
-      yAxis = {type: 'category'}
+      yAxis = {
+        type: 'category',
+        name: meta.xNames.join(" / "),
+        nameLocation: "middle",
+      }
     }
     const opt: EChartsOption = {
+      meta,
       title: {
         show: !!config.viewState.caption,
         text: config.viewState.caption,
@@ -145,7 +154,6 @@ export default memo(({chartConfig, aliasMap, metaData}: ChartProps) => {
       },
       legend: {
         type: 'scroll',
-        bottom: 0,
       },
       animationDurationUpdate: 1000,
       series: Object.keys(config.viewState.measures).map((key, i) => {
@@ -219,9 +227,19 @@ export default memo(({chartConfig, aliasMap, metaData}: ChartProps) => {
   useEffect(() => {
     if (!data) return
 
+    const meta = {
+      xNames: [] as string[],
+      xKeys: [] as string[],
+    }
+    const dimensionRE = /(x)(\d)?/
     const dIndexs = data.headers.reduce((res, h, i) => {
-      if (h.includes('x')) {
+      const match = dimensionRE.exec(h) as any[]
+      if (match) {
         res.push(i)
+        const d = chartConfig.requestState.dimensions?.[match[2] ?? 0]
+        const col = getColData(d!.alias, aliasMap, metaData)
+        meta.xNames.push(col!.description)
+        meta.xKeys.push(col!.key)
       }
       return res
     }, [] as number[]) // headers中x轴数据列的索引列表
@@ -256,11 +274,14 @@ export default memo(({chartConfig, aliasMap, metaData}: ChartProps) => {
         })
       }
     }
-    handleDataMap[chartConfig.configType][chartConfig.type]([...data.headers, 'xData'], dataSource, chartConfig)
+    handleDataMap[chartConfig.configType][chartConfig.type]([...data.headers, 'xData'], dataSource, chartConfig, meta)
   }, [data, chartConfig.viewState, chartConfig.type])
 
   const comMap = {
-    [ComponentType.CHART as string]: <Chart options={chartOptions} chartType={chartConfig.type} />
+    [ComponentType.CHART as string]: <Chart options={chartOptions}
+                                            chartType={chartConfig.type}
+                                            isInverted={chartConfig.viewState.isInverted}
+                                            onSelect={onSelectFilter} />
   }
   const RenderCom = comMap[chartConfig.configType]
   const comRef = useRef<{resize: () => void}>()

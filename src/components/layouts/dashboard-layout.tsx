@@ -1,18 +1,20 @@
 import {Button, Spin, Switch} from "antd";
 import {useRequest} from "ahooks";
-import {AnalysisTabInfo} from "../../apis/typing";
+import {AnalysisTabInfo, FilterInfo} from "../../apis/typing";
 import request from "@/utils/client-request";
 import {createContext, ReactElement, useMemo, useState} from "react";
 import {useRouter} from "next/router";
 import classNames from "classnames";
 import {MetaData} from "../../apis/metaInfo";
 import {CheckOutlined, CloseOutlined, PlusOutlined} from "@ant-design/icons";
+import {Updater, useImmer} from "use-immer";
 
 export const DashBoardContext = createContext<{
   isEditMode: boolean
   metaData: MetaData | undefined
   openAddCom: boolean
   closeAddCom: () => void
+  setFilterList: Updater<FilterInfo[]>
 }>({} as any)
 export default (page: ReactElement) => {
   const router = useRouter()
@@ -26,17 +28,8 @@ export default (page: ReactElement) => {
   const {data: metaData, loading: loadingMetaData} = useRequest<MetaData, []>(() => request.get("/api/dataSets/data/metaInfo?locale=zh-CN&apiTag=22A0"), {
     ready: Boolean(aid)
   })
-  // dashboard是否正在编辑中
-  const [isEditMode, setIsEditMode] = useState(true)
-  const [openAddCom, setOpenAddCom] = useState(false)
-  const dashboardValue = useMemo(() => ({
-    isEditMode,
-    metaData,
-    openAddCom,
-    closeAddCom() {setOpenAddCom(false)}
-  }), [isEditMode, metaData, openAddCom])
-
-  const filterList = [
+  // 过滤器数据
+  const [filterList, setFilterList] = useImmer<FilterInfo[]>([
     {
       "type": "ValueFilter",
       "field": "attr_ky_84",
@@ -53,7 +46,17 @@ export default (page: ReactElement) => {
       ],
       "compId": "23025a24-7386-4161-92dc-f8d6d671ba10"
     }
-  ]
+  ])
+  // dashboard是否正在编辑中
+  const [isEditMode, setIsEditMode] = useState(true)
+  const [openAddCom, setOpenAddCom] = useState(false)
+  const dashboardValue = useMemo(() => ({
+    isEditMode,
+    metaData,
+    openAddCom,
+    closeAddCom() {setOpenAddCom(false)},
+    setFilterList
+  }), [isEditMode, metaData, openAddCom])
 
   return (
     <Spin wrapperClassName='[&_.ant-spin-container]:flex [&_.ant-spin-container]:flex-col
@@ -66,7 +69,7 @@ export default (page: ReactElement) => {
               <div className="grow flex flex-col justify-center h-full px-2">
                 <span className="font-medium">{item.field}</span>
                 <div className="inline-block">
-                  {item.values.map((v, j) => <span key={v + j} className="text-xs text-gray-500">{j !== 0 && ","}{v}</span>)}
+                  {item.values.map((v, j) => <span key={String(v) + j} className="text-xs text-gray-500">{j !== 0 && ","}{v}</span>)}
                 </div>
               </div>
               {/*<Button type="text" size="small" icon={<CloseOutlined className="!text-gray-600"/>}/>*/}
@@ -75,7 +78,9 @@ export default (page: ReactElement) => {
                 <div className="cursor-pointer inline-flex justify-center items-center w-8 h-full bg-green-500 hover:bg-green-600">
                   <CheckOutlined className="!text-white"/>
                 </div>
-                <div className="cursor-pointer inline-flex justify-center items-center w-8 h-full bg-red-500 hover:bg-red-600">
+                <div className="cursor-pointer inline-flex justify-center items-center w-8 h-full bg-red-500 hover:bg-red-600"
+                     onClick={() => setFilterList(draft => {draft.splice(i, 1)})}
+                >
                   <CloseOutlined className="!text-white"/>
                 </div>
               </div>

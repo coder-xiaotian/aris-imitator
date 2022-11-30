@@ -141,6 +141,13 @@ export type DashBoardInfo = {
   }
 }
 
+export type FilterInfo = {
+  isTemp?: boolean
+  compId: string
+  field: string
+  type: "ValueFilter"
+  values: (string | null)[]
+}
 export type ComponentRequestInfo = {
   "selections": {
     "type": "Standard" | "Distribution" | "Agg" | "CountDistinctDate"
@@ -160,12 +167,7 @@ export type ComponentRequestInfo = {
   "filterList": {
     "type": "FilterList"
     "mode": "AND"
-    "filters": {
-      compId: string
-      field: string
-      type: "ValueFilter"
-      values: (string | null)[]
-    }[]
+    "filters": FilterInfo[]
   }
   sortCriteria: any[]
   "includeNullValues": boolean
