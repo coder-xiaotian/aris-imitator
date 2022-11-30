@@ -8,6 +8,7 @@ import classNames from "classnames";
 import {MetaData} from "../../apis/metaInfo";
 import {CheckOutlined, CloseOutlined, PlusOutlined} from "@ant-design/icons";
 import {Updater, useImmer} from "use-immer";
+import ScrollPage from "@/components/scroll-page";
 
 export const DashBoardContext = createContext<{
   isEditMode: boolean
@@ -46,7 +47,7 @@ export default (page: ReactElement) => {
                             [&_.ant-spin-container]:h-full w-full h-full bg-gray-200'
           spinning={loadingTabs || loadingMetaData}>
       <div className='shrink-0 flex justify-between relative z-10 bg-white w-full h-12 shadow'>
-        <div>
+        <ScrollPage>
           {filterList.map((item, i) => (
             <div key={i} className="inline-flex justify-between items-center h-full border-l border-l-slate-200 hover:bg-slate-50">
               <div className="grow flex flex-col justify-center h-full px-2 max-w-[280px]">
@@ -81,7 +82,7 @@ export default (page: ReactElement) => {
               )}
             </div>
           ))}
-        </div>
+        </ScrollPage>
         <div>
           <div className='inline-flex flex-col justify-center items-center h-full px-2 border-x border-x-slate-200'>
             <Button className='p-2 hover:!bg-slate-100 text-center'
