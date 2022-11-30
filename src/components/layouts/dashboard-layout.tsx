@@ -1,4 +1,4 @@
-import {Button, Spin, Switch} from "antd";
+import {Button, Spin, Switch, Typography} from "antd";
 import {useRequest} from "ahooks";
 import {AnalysisTabInfo, FilterInfo} from "../../apis/typing";
 import request from "@/utils/client-request";
@@ -29,24 +29,7 @@ export default (page: ReactElement) => {
     ready: Boolean(aid)
   })
   // 过滤器数据
-  const [filterList, setFilterList] = useImmer<FilterInfo[]>([
-    {
-      "type": "ValueFilter",
-      "field": "attr_ky_84",
-      "values": [
-        "I 类产品"
-      ],
-      "compId": "23025a24-7386-4161-92dc-f8d6d671ba10"
-    },
-    {
-      "type": "ValueFilter",
-      "field": "current_status",
-      "values": [
-        "国内销服总监审核"
-      ],
-      "compId": "23025a24-7386-4161-92dc-f8d6d671ba10"
-    }
-  ])
+  const [filterList, setFilterList] = useImmer<FilterInfo[]>([])
   // dashboard是否正在编辑中
   const [isEditMode, setIsEditMode] = useState(true)
   const [openAddCom, setOpenAddCom] = useState(false)
@@ -66,24 +49,36 @@ export default (page: ReactElement) => {
         <div>
           {filterList.map((item, i) => (
             <div key={i} className="inline-flex justify-between items-center h-full border-l border-l-slate-200 hover:bg-slate-50">
-              <div className="grow flex flex-col justify-center h-full px-2">
+              <div className="grow flex flex-col justify-center h-full px-2 max-w-[280px]">
                 <span className="font-medium">{item.field}</span>
                 <div className="inline-block">
-                  {item.values.map((v, j) => <span key={String(v) + j} className="text-xs text-gray-500">{j !== 0 && ","}{v}</span>)}
+                  <Typography.Text className="text-xs text-gray-500"
+                                   ellipsis={{tooltip: {color: "#fff", overlayInnerStyle: {color: "#000"}, title: item.values.join(",")}}}
+                  >{item.values.join(",")}</Typography.Text>
                 </div>
               </div>
-              {/*<Button type="text" size="small" icon={<CloseOutlined className="!text-gray-600"/>}/>*/}
-              <div className="flex items-center relative h-full">
-                <span className="absolute left-0 border-t-[7px] border-t-transparent border-l-[8px] border-l-white border-b-[7px] border-b-transparent" />
-                <div className="cursor-pointer inline-flex justify-center items-center w-8 h-full bg-green-500 hover:bg-green-600">
-                  <CheckOutlined className="!text-white"/>
+              {item.isTemp ? (
+                <div className="flex items-center relative h-full">
+                  <span className="absolute left-0 border-t-[7px] border-t-transparent border-l-[8px] border-l-white border-b-[7px] border-b-transparent" />
+                  <div className="cursor-pointer inline-flex justify-center items-center w-8 h-full bg-green-500 hover:bg-green-600"
+                       onClick={() => setFilterList(draft => {draft[i].isTemp = false})}
+                  >
+                    <CheckOutlined className="!text-white"/>
+                  </div>
+                  <div className="cursor-pointer inline-flex justify-center items-center w-8 h-full bg-red-500 hover:bg-red-600"
+                       onClick={() => setFilterList(draft => {draft.splice(i, 1)})}
+                  >
+                    <CloseOutlined className="!text-white"/>
+                  </div>
                 </div>
-                <div className="cursor-pointer inline-flex justify-center items-center w-8 h-full bg-red-500 hover:bg-red-600"
-                     onClick={() => setFilterList(draft => {draft.splice(i, 1)})}
-                >
-                  <CloseOutlined className="!text-white"/>
-                </div>
-              </div>
+              ) : (
+                <Button type="text"
+                        size="small"
+                        className="mr-1"
+                        icon={<CloseOutlined className="!text-gray-600"/>}
+                        onClick={() => setFilterList(draft => {draft.splice(i, 1)})}
+                />
+              )}
             </div>
           ))}
         </div>

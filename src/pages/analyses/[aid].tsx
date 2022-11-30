@@ -167,17 +167,17 @@ const DashBoard = () => {
   }
 
   const handleSelectFilter = (compId: string, keys: string[], values: string[]) => {
-    console.log(compId, keys, values)
     setFilterList(draft => {
       let replaceIndexs: number[] = []
       for (let i = 0; i < draft.length; i++) {
         const item = draft[i]
-        if (item.compId === compId && !item.isTemp) {
+        if (item.compId === compId && item.isTemp) {
           // @ts-ignore
           draft[i] = null
           replaceIndexs.push(i)
         }
       }
+
       keys.forEach((k, i) => {
         if (i >= replaceIndexs.length) {
           draft.push({
