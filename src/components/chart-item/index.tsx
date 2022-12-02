@@ -42,7 +42,7 @@ const CHART_TYPE_MAP = {
 }
 export default memo(({chartConfig, aliasMap, metaData, addingFilter, filterList, onSelectFilter}: ChartProps) => {
   // 获取图表的数据
-  const {data, loading, error} = useRequest(() => request.post<any, ChartDataResponse, ComponentRequestInfo>('/api/dataSets/data/query/simple',
+  const {data, loading, error, run: requstData} = useRequest((fList = []) => request.post<any, ChartDataResponse, ComponentRequestInfo>('/api/dataSets/data/query/simple',
     {
     considerDistinct: false,
     includeNullValues: chartConfig.requestState.includeNullValues,
@@ -52,7 +52,7 @@ export default memo(({chartConfig, aliasMap, metaData, addingFilter, filterList,
     sortCriteria: [],
     filterList: {
       type: 'FilterList',
-      filters: filterList,
+      filters: fList,
       mode: 'AND'
     },
     selections: [...chartConfig.requestState.dimensions?.map((d, i) => {
@@ -101,9 +101,14 @@ export default memo(({chartConfig, aliasMap, metaData, addingFilter, filterList,
     .catch(e => {
       return Promise.reject(e.response.data)
     }), {
-    refreshDeps: [chartConfig.requestState, filterList],
+    refreshDeps: [chartConfig.requestState],
     debounceWait: 500,
   })
+  useEffect(() => { // 之所以单独对filterList做监听，是为了能够对其判空，为空且正在添加临时过滤器则不请求接口
+    if (!filterList.length && addingFilter) return
+
+    requstData(filterList)
+  }, [filterList, addingFilter])
 
   // 根据获取的数据和配置组装echarts的options
   const [chartOptions, setChartOptions] = useState<EChartsOption>({})
@@ -292,7 +297,6 @@ export default memo(({chartConfig, aliasMap, metaData, addingFilter, filterList,
     comRef.current?.resize()
   }, {wait: 500})
   useEffect(() => {
-    console.log("addingFilter: ", addingFilter)
     if (addingFilter) return
     comRef.current?.clearSelection?.()
   }, [addingFilter])

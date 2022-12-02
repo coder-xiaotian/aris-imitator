@@ -1,4 +1,4 @@
-import {useContext, useState} from "react";
+import {useContext, useRef, useState} from "react";
 // @ts-ignore
 import ReactGridLayout, {Layout, utils as ReactGridLayoutUtils} from "react-grid-layout";
 import {AliasMapping, ChartType, ComponentConfig, DashBoardInfo} from "../../apis/typing";
@@ -202,6 +202,7 @@ const DashBoard = () => {
   }
 
   const [containerWidth, setContainerWidth] = useState<number>(0)
+  const emptyListRef = useRef([]) // 不想每次都传新对象导致组件chart-item重新渲染
   return (
     <ResizeObserver onResize={size => setContainerWidth(size.width)}>
       <Spin wrapperClassName='w-full h-full' spinning={loading}>
@@ -236,7 +237,7 @@ const DashBoard = () => {
                            metaData={metaData!}
                            addingFilter={addingFilter}
                            onSelectFilter={(keys, values) => handleSelectFilter(chart.config.requestState.id, keys, values)}
-                           filterList={addingFilter ? [] : filterList}
+                           filterList={addingFilter ? emptyListRef.current : filterList}
                 />
               </GridItem>
             )

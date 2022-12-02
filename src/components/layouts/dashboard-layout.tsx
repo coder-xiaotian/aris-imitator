@@ -39,7 +39,17 @@ export default (page: ReactElement) => {
   const [openAddCom, setOpenAddCom] = useState(false)
   // 处于配置中的过滤器id
   const [configingFilterId, setConfigingFilterId] = useState<string>()
-  const dashboardValue = useMemo(() => ({
+  // const dashboardValue = useMemo(() => ({ // 这么些心智负担有点儿大，每次加了新状态都忘记添加到依赖列表里去
+  //   isEditMode,
+  //   metaData,
+  //   openAddCom,
+  //   closeAddCom() {setOpenAddCom(false)},
+  //   filterList,
+  //   setFilterList,
+  //   configingFilterId,
+  //   setConfigingFilterId
+  // }), [filterList, isEditMode, metaData, openAddCom, configingFilterId])
+  const dashboardValue = {
     isEditMode,
     metaData,
     openAddCom,
@@ -48,7 +58,7 @@ export default (page: ReactElement) => {
     setFilterList,
     configingFilterId,
     setConfigingFilterId
-  }), [isEditMode, metaData, openAddCom, configingFilterId])
+  }
 
   return (
     <Spin wrapperClassName='[&_.ant-spin-container]:flex [&_.ant-spin-container]:flex-col
