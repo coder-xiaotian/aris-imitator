@@ -2,13 +2,13 @@ import {Button, Spin, Switch, Typography} from "antd";
 import {useRequest} from "ahooks";
 import {AnalysisTabInfo, FilterInfo} from "../../apis/typing";
 import request from "@/utils/client-request";
-import {createContext, ReactElement, useMemo, useState} from "react";
+import {createContext, Dispatch, ReactElement, SetStateAction, useEffect, useMemo, useState} from "react";
 import {useRouter} from "next/router";
 import classNames from "classnames";
 import {MetaData} from "../../apis/metaInfo";
 import {CheckOutlined, CloseOutlined, PlusOutlined} from "@ant-design/icons";
 import {Updater, useImmer} from "use-immer";
-import ScrollPage from "@/components/scroll-page";
+import ScrollPage from "@/components/layouts/scroll-page";
 
 export const DashBoardContext = createContext<{
   isEditMode: boolean
@@ -16,6 +16,8 @@ export const DashBoardContext = createContext<{
   openAddCom: boolean
   closeAddCom: () => void
   setFilterList: Updater<FilterInfo[]>
+  configinFilterId: string
+  setConfigingFilterId: Dispatch<SetStateAction<string|undefined>>
 }>({} as any)
 export default (page: ReactElement) => {
   const router = useRouter()
@@ -34,12 +36,15 @@ export default (page: ReactElement) => {
   // dashboard是否正在编辑中
   const [isEditMode, setIsEditMode] = useState(true)
   const [openAddCom, setOpenAddCom] = useState(false)
+  const [configingFilterId, setConfigingFilterId] = useState<string>()
   const dashboardValue = useMemo(() => ({
     isEditMode,
     metaData,
     openAddCom,
     closeAddCom() {setOpenAddCom(false)},
-    setFilterList
+    setFilterList,
+    configingFilterId,
+    setConfigingFilterId
   }), [isEditMode, metaData, openAddCom])
 
   return (
