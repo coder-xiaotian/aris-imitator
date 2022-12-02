@@ -4,9 +4,9 @@ import {
   ChartType,
   ComponentConfig,
   ComponentRequestInfo,
-  ComponentType
+  ComponentType, FilterInfo
 } from "../../apis/typing";
-import {memo, useEffect, useRef, useState} from 'react'
+import {memo, useContext, useEffect, useRef, useState} from 'react'
 import {getColData} from "@/components/component-config-drawer/utils";
 import {useDebounceFn, useRequest} from "ahooks";
 import {Spin} from "antd";
@@ -20,12 +20,15 @@ import {XAXisOption, YAXisOption} from "echarts/types/dist/shared";
 import abbreviate from 'number-abbreviate'
 import {OptionEncode} from "echarts/types/src/util/types";
 import {calcBucketIntervalVal} from "@/components/component-config-drawer/data-config/bucket";
+import {DashBoardContext} from "@/components/layouts/dashboard-layout";
 
 type ChartProps = {
   chartConfig: ComponentConfig
-  aliasMap: AliasMapping,
-  metaData: MetaData,
+  aliasMap: AliasMapping
+  metaData: MetaData
+  addingFilter: boolean
   onSelectFilter: SelectFilterHandler
+  filterList: FilterInfo[]
 }
 const CHART_TYPE_MAP = {
   [ChartType.BAR]: 'bar' as const,
@@ -37,7 +40,7 @@ const CHART_TYPE_MAP = {
   [ChartType.GRID]: 'line' as const,
   [ChartType.SINGLE_KPI]: 'line' as const,
 }
-export default memo(({chartConfig, aliasMap, metaData, onSelectFilter}: ChartProps) => {
+export default memo(({chartConfig, aliasMap, metaData, addingFilter, filterList, onSelectFilter}: ChartProps) => {
   // 获取图表的数据
   const {data, loading, error} = useRequest(() => request.post<any, ChartDataResponse, ComponentRequestInfo>('/api/dataSets/data/query/simple',
     {
@@ -49,7 +52,7 @@ export default memo(({chartConfig, aliasMap, metaData, onSelectFilter}: ChartPro
     sortCriteria: [],
     filterList: {
       type: 'FilterList',
-      filters: [],
+      filters: filterList,
       mode: 'AND'
     },
     selections: [...chartConfig.requestState.dimensions?.map((d, i) => {
@@ -98,7 +101,7 @@ export default memo(({chartConfig, aliasMap, metaData, onSelectFilter}: ChartPro
     .catch(e => {
       return Promise.reject(e.response.data)
     }), {
-    refreshDeps: [chartConfig.requestState],
+    refreshDeps: [chartConfig.requestState, filterList],
     debounceWait: 500,
   })
 
@@ -284,10 +287,15 @@ export default memo(({chartConfig, aliasMap, metaData, onSelectFilter}: ChartPro
                                             onSelect={onSelectFilter} />
   }
   const RenderCom = comMap[chartConfig.configType]
-  const comRef = useRef<{resize: () => void}>()
+  const comRef = useRef<{resize: () => void, clearSelection?: () => void}>()
   const {run: handleResize} = useDebounceFn(() => {
     comRef.current?.resize()
   }, {wait: 500})
+  useEffect(() => {
+    console.log("addingFilter: ", addingFilter)
+    if (addingFilter) return
+    comRef.current?.clearSelection?.()
+  }, [addingFilter])
 
   return (
     <ResizeObserver onResize={handleResize}>
@@ -301,4 +309,6 @@ export default memo(({chartConfig, aliasMap, metaData, onSelectFilter}: ChartPro
   )
 }, (prevProps, nextProps) => {
   return prevProps.chartConfig === nextProps.chartConfig
+    && prevProps.addingFilter === nextProps.addingFilter
+    && prevProps.filterList === nextProps.filterList
 })

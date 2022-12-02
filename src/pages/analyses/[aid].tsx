@@ -34,7 +34,7 @@ function getLayoutXY(layouts: Layout[], l: Layout) {
 export type ConfigChangeHandler = (newChart: ComponentConfig, newAliasMap?: AliasMapping, usedAliases?: string[]) => void
 const DashBoard = () => {
   // 是否编辑模式
-  const {isEditMode, metaData, openAddCom, closeAddCom, setFilterList} = useContext(DashBoardContext)
+  const {isEditMode, metaData, openAddCom, closeAddCom, filterList, setFilterList, setConfigingFilterId, configingFilterId} = useContext(DashBoardContext)
   const router = useRouter()
   const {aid, tab} = router.query
   const {data: dashboardData, mutate: setDashboardData, loading} = useRequest(async () => {
@@ -198,6 +198,7 @@ const DashBoard = () => {
         }
       })
     })
+    setConfigingFilterId(compId)
   }
 
   const [containerWidth, setContainerWidth] = useState<number>(0)
@@ -213,27 +214,33 @@ const DashBoard = () => {
           isDraggable={isEditMode}
           onDragStop={handleDragStop}
         >
-          {charts.map((chart, i) => (
-            <GridItem disabled={!isEditMode}
-                      key={i}
-                      data-grid={{
-                        ...chart.layout,
-                        resizeHandles: ['se'],
-                      }}
-                      selected={configingIndex === i}
-                      scrollIntoView={scrollToIndex === i}
-                      onConfig={() => setConfigingIndex(i)}
-                      onDoubleClick={() => isEditMode && setConfigingIndex(i)}
-                      onDelete={() => handleDeleteCom(i)}
-            >
-              <ChartItem key={chart.config.requestState.id}
-                         chartConfig={chart.config}
-                         aliasMap={aliasMap}
-                         metaData={metaData!}
-                         onSelectFilter={(keys, values) => handleSelectFilter(chart.config.requestState.id, keys, values)}
-              />
-            </GridItem>
-          ))}
+          {charts.map((chart, i) => {
+            const addingFilter = configingFilterId === chart.config.requestState.id
+
+            return (
+              <GridItem disabled={!isEditMode}
+                        key={i}
+                        data-grid={{
+                          ...chart.layout,
+                          resizeHandles: ['se'],
+                        }}
+                        selected={configingIndex === i}
+                        scrollIntoView={scrollToIndex === i}
+                        onConfig={() => setConfigingIndex(i)}
+                        onDoubleClick={() => isEditMode && setConfigingIndex(i)}
+                        onDelete={() => handleDeleteCom(i)}
+              >
+                <ChartItem key={chart.config.requestState.id}
+                           chartConfig={chart.config}
+                           aliasMap={aliasMap}
+                           metaData={metaData!}
+                           addingFilter={addingFilter}
+                           onSelectFilter={(keys, values) => handleSelectFilter(chart.config.requestState.id, keys, values)}
+                           filterList={addingFilter ? [] : filterList}
+                />
+              </GridItem>
+            )
+          })}
         </ReactGridLayout>
         <ComponentConfigDrawer configing={charts[configingIndex]?.config}
                                aliasMap={aliasMap}

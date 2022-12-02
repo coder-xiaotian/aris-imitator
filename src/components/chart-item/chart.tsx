@@ -16,6 +16,7 @@ export default forwardRef(({options, chartType, onSelect, isInverted}: ChartProp
   const echartsInsRef = useRef<EChartsType>()
   function calcBrushOption(width: number, height: number, x: number, y: number, activeDir?: "leftHandler" | "rightHandler") {
     return {
+      id: "filterGroup",
       type: "group",
       x,
       y,
@@ -187,7 +188,10 @@ export default forwardRef(({options, chartType, onSelect, isInverted}: ChartProp
   }, [echartsInsRef.current, options])
   useImperativeHandle(ref, () => ({
     resize: echartsInsRef.current?.resize,
-    clearSelection: () => echartsInsRef.current?.setOption({graphic: {}})
+    clearSelection: () => {
+      console.log('clear')
+      echartsInsRef.current?.setOption?.({graphic: []}, {replaceMerge: "graphic"})
+    }
   }))
 
   return (

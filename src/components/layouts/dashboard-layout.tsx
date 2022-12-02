@@ -15,6 +15,7 @@ export const DashBoardContext = createContext<{
   metaData: MetaData | undefined
   openAddCom: boolean
   closeAddCom: () => void
+  filterList: FilterInfo[]
   setFilterList: Updater<FilterInfo[]>
   configingFilterId: string | undefined
   setConfigingFilterId: Dispatch<SetStateAction<string|undefined>>
@@ -36,16 +37,18 @@ export default (page: ReactElement) => {
   // dashboard是否正在编辑中
   const [isEditMode, setIsEditMode] = useState(true)
   const [openAddCom, setOpenAddCom] = useState(false)
+  // 处于配置中的过滤器id
   const [configingFilterId, setConfigingFilterId] = useState<string>()
   const dashboardValue = useMemo(() => ({
     isEditMode,
     metaData,
     openAddCom,
     closeAddCom() {setOpenAddCom(false)},
+    filterList,
     setFilterList,
     configingFilterId,
     setConfigingFilterId
-  }), [isEditMode, metaData, openAddCom])
+  }), [isEditMode, metaData, openAddCom, configingFilterId])
 
   return (
     <Spin wrapperClassName='[&_.ant-spin-container]:flex [&_.ant-spin-container]:flex-col
@@ -72,7 +75,12 @@ export default (page: ReactElement) => {
                     <CheckOutlined className="!text-white"/>
                   </div>
                   <div className="cursor-pointer inline-flex justify-center items-center w-8 h-full bg-red-500 hover:bg-red-600"
-                       onClick={() => setFilterList(draft => {draft.splice(i, 1)})}
+                       onClick={() => setFilterList(draft => {
+                         const [item] = draft.splice(i, 1)
+                         if (draft.findIndex(o => o.compId === item.compId) === -1) { // filterList已经没有改组件的临时过滤器了
+                           setConfigingFilterId(undefined)
+                         }
+                       })}
                   >
                     <CloseOutlined className="!text-white"/>
                   </div>
