@@ -16,7 +16,7 @@ export const DashBoardContext = createContext<{
   openAddCom: boolean
   closeAddCom: () => void
   setFilterList: Updater<FilterInfo[]>
-  configinFilterId: string
+  configingFilterId: string | undefined
   setConfigingFilterId: Dispatch<SetStateAction<string|undefined>>
 }>({} as any)
 export default (page: ReactElement) => {
