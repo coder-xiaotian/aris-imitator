@@ -239,15 +239,16 @@ export default memo(({chartConfig, aliasMap, metaData, addingFilter, filterList,
       xNames: [] as string[],
       xKeys: [] as string[],
     }
-    const dimensionRE = /(x)(\d)?/
-    const dIndexs = data.headers.reduce((res, h, i) => {
+    const dimensionRE = /x(\d)?/
+    const dIndexs = data.headers.reduce((res, h) => {
       const match = dimensionRE.exec(h) as any[]
       if (match) {
+        const i = match[1] ?? 0
         res.push(i)
-        const d = chartConfig.requestState.dimensions?.[match[2] ?? 0]
+        const d = chartConfig.requestState.dimensions?.[i]
         const col = getColData(d!.alias, aliasMap, metaData)
-        meta.xNames.push(col!.description)
-        meta.xKeys.push(col!.key)
+        meta.xNames[i] = col!.description
+        meta.xKeys[i] = col!.key
       }
       return res
     }, [] as number[]) // headers中x轴数据列的索引列表

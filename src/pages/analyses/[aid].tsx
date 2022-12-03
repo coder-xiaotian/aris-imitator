@@ -185,7 +185,10 @@ const DashBoard = () => {
             compId,
             type: "ValueFilter",
             field: k,
-            values: values.map(v => v.split("-")[i])
+            values: values.map(v => {
+              const res = v.split("-")[i]
+              return res === "null" ? null : res
+            })
           })
         } else {
           draft.splice(replaceIndexs[i], 1, {
@@ -193,7 +196,10 @@ const DashBoard = () => {
             compId,
             type: "ValueFilter",
             field: k,
-            values: values.map(v => v.split("-")[i])
+            values: values.map(v => {
+              const res = v.split("-")[i]
+              return res === "null" ? null : res
+            })
           })
         }
       })

@@ -39,7 +39,7 @@ export default (page: ReactElement) => {
   const [openAddCom, setOpenAddCom] = useState(false)
   // 处于配置中的过滤器id
   const [configingFilterId, setConfigingFilterId] = useState<string>()
-  // const dashboardValue = useMemo(() => ({ // 这么些心智负担有点儿大，每次加了新状态都忘记添加到依赖列表里去
+  // const dashboardValue = useMemo(() => ({ // 这么写心智负担有点儿大，每次加了新状态都忘记添加到依赖列表里去
   //   isEditMode,
   //   metaData,
   //   openAddCom,
