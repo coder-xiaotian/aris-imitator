@@ -166,7 +166,7 @@ const DashBoard = () => {
     setConfigingIndex(NaN)
   }
 
-  const handleSelectFilter = (compId: string, keys: string[], values: string[]) => {
+  const handleSelectFilter = (compId: string, keys: string[], names: string[], values: string[]) => {
     setFilterList(draft => {
       let replaceIndexs: number[] = []
       for (let i = 0; i < draft.length; i++) {
@@ -185,6 +185,7 @@ const DashBoard = () => {
             compId,
             type: "ValueFilter",
             field: k,
+            fieldName: names[i],
             values: values.map(v => {
               const res = v.split("-")[i]
               return res === "null" ? null : res
@@ -196,6 +197,7 @@ const DashBoard = () => {
             compId,
             type: "ValueFilter",
             field: k,
+            fieldName: names[i],
             values: values.map(v => {
               const res = v.split("-")[i]
               return res === "null" ? null : res
@@ -242,7 +244,7 @@ const DashBoard = () => {
                            aliasMap={aliasMap}
                            metaData={metaData!}
                            addingFilter={addingFilter}
-                           onSelectFilter={(keys, values) => handleSelectFilter(chart.config.requestState.id, keys, values)}
+                           onSelectFilter={(keys, names, values) => handleSelectFilter(chart.config.requestState.id, keys, names, values)}
                            filterList={addingFilter ? emptyListRef.current : filterList}
                 />
               </GridItem>

@@ -4,7 +4,7 @@ import {forwardRef, useEffect, useImperativeHandle, useRef} from "react";
 import {ChartType} from "../../apis/typing";
 import colors from "tailwindcss/colors";
 
-export type SelectFilterHandler = (keys: string[], values: string[]) => void
+export type SelectFilterHandler = (keys: string[], names: string[], values: string[]) => void
 type ChartProps = {
   options: EChartsOption,
   chartType: `${ChartType}`,
@@ -126,7 +126,7 @@ export default forwardRef(({options, chartType, onSelect, isInverted}: ChartProp
         ins.setOption({
           graphic: calcBrushOption(bandWidth, height, x - bandWidth / 2, y),
         })
-        onSelect(ecModel.option.meta.xKeys, [dAxis.getCategories()[pixel[0]]])
+        onSelect(ecModel.option.meta.xKeys, ecModel.option.meta.xNames, [dAxis.getCategories()[pixel[0]]])
       })
       ins.on("mousedown", "graphic", ({event: downEvent, info}) => {
         // @ts-ignore
@@ -169,7 +169,7 @@ export default forwardRef(({options, chartType, onSelect, isInverted}: ChartProp
           for (let i = startIndex; i <= endIndex; i++) {
             values.push(categories[i])
           }
-          onSelect(ecModel.option.meta.xKeys, values)
+          onSelect(ecModel.option.meta.xKeys, ecModel.option.meta.xNames, values)
         }
         document.addEventListener("mousemove", handleMousemove)
         document.addEventListener("mouseup", () => {

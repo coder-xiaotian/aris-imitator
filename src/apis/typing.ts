@@ -145,6 +145,7 @@ export type FilterInfo = {
   isTemp?: boolean
   compId: string
   field: string
+  fieldName?: string
   type: "ValueFilter"
   values: (string | null)[]
 }
