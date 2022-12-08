@@ -131,6 +131,32 @@ export default forwardRef(({options, chartType, onSelect, isInverted}: ChartProp
         })
         onSelect(ecModel.option.meta.xKeys, ecModel.option.meta.xNames, [dAxis.getCategories()[startIndex]])
       })
+      ins.on("mouseover", {seriesId: "filterSelector"}, ({event}) => {
+        const canvas = event?.event.target as HTMLCanvasElement
+        const dir = event?.target.name as "leftHandler" | "rightHandler"
+        if (dir !== "leftHandler" && dir !== "rightHandler") {
+          canvas.style.cursor = "default"
+          return
+        }
+
+        if (dir === "leftHandler") {
+          if (isInverted) {
+            canvas.style.cursor = 'n-resize'
+          } else {
+            canvas.style.cursor = "w-resize"
+          }
+        } else {
+          if (isInverted) {
+            canvas.style.cursor = "s-resize"
+          } else {
+            canvas.style.cursor = "e-resize"
+          }
+        }
+      })
+      ins.on("mouseout", {seriesId: "filterSelector"}, ({event}) => {
+        const canvas = event?.event.target as HTMLCanvasElement
+        canvas.style.cursor = "default"
+      })
       ins.on("mousedown", {seriesId: "filterSelector"}, ({event}) => {
         const dir = event?.target.name as "leftHandler" | "rightHandler"
         if (dir !== "leftHandler" && dir !== "rightHandler") return
