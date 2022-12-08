@@ -21,6 +21,7 @@ export default forwardRef(({options, chartType, onSelect, isInverted}: ChartProp
       id: "filterSelector",
       sliderRange: [startIndex, endIndex],
       encode: {[isInverted ? 'y' : 'x']: "xData"},
+      animation: activeDir === "leftHandler" ? false : true,
       renderItem(params, api) {
         const [bandWidth] = api.size?.([1]) as number[]
         const helfBandWidth = bandWidth / 2
@@ -127,9 +128,10 @@ export default forwardRef(({options, chartType, onSelect, isInverted}: ChartProp
         })
         onSelect(ecModel.option.meta.xKeys, ecModel.option.meta.xNames, [dAxis.getCategories()[startIndex]])
       })
-      // @ts-ignore
-      function handleMouseDown({event: downEvent, data}: any, dir: "leftHandler" | "rightHandler") {
-        downEvent.event.stopPropagation()
+      ins.on("mousedown", {seriesId: "filterSelector"}, ({event}) => {
+        const dir = event?.target.name as "leftHandler" | "rightHandler"
+        if (dir !== "leftHandler" && dir !== "rightHandler") return
+
         // @ts-ignore
         let [startIndex, endIndex] = ins.getModel().queryComponents({mainType: "series", id: "filterSelector"})[0].option.sliderRange
         // @ts-ignore
@@ -140,7 +142,7 @@ export default forwardRef(({options, chartType, onSelect, isInverted}: ChartProp
           series: calcBrushOption(startIndex, endIndex, dir)
         })
 
-        let startX = downEvent!.offsetX
+        let startX = event!.offsetX
         let movementX: number, tmpStartIdx = startIndex, tmpEndIdx = endIndex
         function handleMousemove(e: MouseEvent) {
           movementX = Math.abs(e.offsetX - startX)
@@ -150,7 +152,6 @@ export default forwardRef(({options, chartType, onSelect, isInverted}: ChartProp
           startX = startX + bandWidth * Math.ceil(movementX / bandWidth)
           if (dir === "leftHandler") {
             tmpStartIdx = newIndex
-            console.log(tmpStartIdx)
           } else {
             tmpEndIdx = newIndex
           }
@@ -158,7 +159,6 @@ export default forwardRef(({options, chartType, onSelect, isInverted}: ChartProp
           if (tmpEndIdx < tmpStartIdx) return // 宽度已经是最小了，不能继续拖拽
           if (tmpStartIdx < 0 || tmpEndIdx >= categories.length) return // 到达grid边界，不能拖拽
 
-          console.log('start: ', tmpStartIdx, tmpEndIdx)
           startIndex = tmpStartIdx
           endIndex = tmpEndIdx
           ins.setOption({
@@ -176,10 +176,8 @@ export default forwardRef(({options, chartType, onSelect, isInverted}: ChartProp
           ins.setOption({
             series: calcBrushOption(startIndex, endIndex)
           })
-        })
-      }
-      ins.on("mousedown", {element: "leftHandler"}, (params) => handleMouseDown(params, "leftHandler"))
-      ins.on("mousedown", {element: "rightHandler"}, (params) => handleMouseDown(params, "rightHandler"))
+        }, {once: true})
+      })
     }
 
     return () => ins.dispose()
@@ -190,7 +188,6 @@ export default forwardRef(({options, chartType, onSelect, isInverted}: ChartProp
   useImperativeHandle(ref, () => ({
     resize: echartsInsRef.current?.resize,
     clearSelection: () => {
-      console.log('clear')
       echartsInsRef.current?.setOption?.({graphic: []}, {replaceMerge: "graphic"})
     }
   }))
