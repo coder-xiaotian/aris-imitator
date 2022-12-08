@@ -191,10 +191,9 @@ export default forwardRef(({options, chartType, onSelect, isInverted}: ChartProp
   useImperativeHandle(ref, () => ({
     resize: echartsInsRef.current?.resize,
     clearSelection: () => {
-      echartsInsRef.current?.setOption?.({serirs: {
-          type: "custom",
-          id: "filterSelector",
-        }}, {replaceMerge: "graphic"})
+      const options = echartsInsRef.current?.getOption()
+      // @ts-ignore
+      echartsInsRef.current?.setOption?.({series: options.series.filter(s => s === "filterSelector")}, {replaceMerge: ["series"]})
     }
   }))
 
