@@ -42,7 +42,7 @@ const CHART_TYPE_MAP = {
 }
 export default memo(({chartConfig, aliasMap, metaData, addingFilter, filterList, onSelectFilter}: ChartProps) => {
   // 获取图表的数据
-  const {data, loading, error, run: requstData} = useRequest((fList = []) => request.post<any, ChartDataResponse, ComponentRequestInfo>('/api/dataSets/data/query/simple',
+  const {data, loading, error, run: requstData} = useRequest((fList = []) => request.post<any, ChartDataResponse, ComponentRequestInfo>('/api/dataSets/my_test/query/simple',
     {
     considerDistinct: false,
     includeNullValues: chartConfig.requestState.includeNullValues,

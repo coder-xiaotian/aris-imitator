@@ -23,13 +23,13 @@ export const DashBoardContext = createContext<{
 export default (page: ReactElement) => {
   const router = useRouter()
   const {aid, tab} = router.query
-  const {data: tabs = [], loading: loadingTabs} = useRequest<AnalysisTabInfo[], []>(() => request.get(`/api/projects/ky_1/analyses/${aid}/tabs`), {
+  const {data: tabs = [], loading: loadingTabs} = useRequest<AnalysisTabInfo[], []>(() => request.get(`/api/projects/my_test/analyses/${aid}/tabs`), {
     ready: Boolean(aid),
     onSuccess(data) {
       router.push(`/analyses/${aid}?tab=${data?.[0].tabKey}`)
     }
   })
-  const {data: metaData, loading: loadingMetaData} = useRequest<MetaData, []>(() => request.get("/api/dataSets/data/metaInfo?locale=zh-CN&apiTag=22A0"), {
+  const {data: metaData, loading: loadingMetaData} = useRequest<MetaData, []>(() => request.get("/api/dataSets/my_test/metaInfo?locale=zh-CN&apiTag=22A0"), {
     ready: Boolean(aid)
   })
   // 过滤器数据

@@ -10,11 +10,12 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<Data>
 ) {
-  if (req.method !== 'GET') return
-
   try {
-    const r = await request.get("https://processmining-us.ariscloud.com/mining/api/int/tenants/supertis2/dataSets/data/metaInfo?locale=zh-CN&apiTag=22A0")
-    res.status(200).json(r.data)
+    const {aid, tab} = req.query
+    if (req.method === 'POST') {
+      const r = await request.post(`https://processmining.ariscloud.com/mining/api/int/tenants/xiaotian3/dataSets/${req.query.pid}/query/simple?locale=zh-CN&apiTag=22A0`, req.body)
+      res.status(200).json(r.data)
+    }
   } catch (e) {
     if (e instanceof AxiosError) {
       res.status(e.response!.status).json(e.response?.data)
