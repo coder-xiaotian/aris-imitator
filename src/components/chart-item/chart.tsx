@@ -22,7 +22,10 @@ export default forwardRef(({options, chartType, onSelect, isInverted}: ChartProp
       sliderRange: [startIndex, endIndex],
       encode: {[isInverted ? 'y' : 'x']: "xData"},
       animation: activeDir === "leftHandler" ? false : true,
+      clip: true,
       renderItem(params, api) {
+        if (params.dataIndex < startIndex || params.dataIndex > endIndex) return
+
         const [bandWidth] = api.size?.([1]) as number[]
         const helfBandWidth = bandWidth / 2
         const [startX] = api.coord([startIndex])
@@ -188,7 +191,10 @@ export default forwardRef(({options, chartType, onSelect, isInverted}: ChartProp
   useImperativeHandle(ref, () => ({
     resize: echartsInsRef.current?.resize,
     clearSelection: () => {
-      echartsInsRef.current?.setOption?.({graphic: []}, {replaceMerge: "graphic"})
+      echartsInsRef.current?.setOption?.({serirs: {
+          type: "custom",
+          id: "filterSelector",
+        }}, {replaceMerge: "graphic"})
     }
   }))
 

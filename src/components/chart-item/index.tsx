@@ -164,6 +164,15 @@ export default memo(({chartConfig, aliasMap, metaData, addingFilter, filterList,
         type: 'scroll',
       },
       animationDurationUpdate: 1000,
+      dataZoom: {
+        type: "inside",
+        start: 0,
+        end: 100,
+        orient: config.viewState.isInverted ? "vertical" : "horizontal",
+        zoomOnMouseWheel: "ctrl",
+        moveOnMouseMove: "ctrl",
+        preventDefaultMouseMove: false,
+      },
       series: Object.keys(config.viewState.measures).map((key, i) => {
         const viewMeasure = config.viewState.measures[key]
         const type = ((viewMeasure.chartType === "column" || viewMeasure.chartType === "line" || viewMeasure.chartType === "area")
@@ -246,7 +255,9 @@ export default memo(({chartConfig, aliasMap, metaData, addingFilter, filterList,
         const i = match[1] ?? 0
         res.push(i)
         const d = chartConfig.requestState.dimensions?.[i]
-        const col = getColData(d!.alias, aliasMap, metaData)
+        if (!d) return res
+
+        const col = getColData(d.alias, aliasMap, metaData)
         meta.xNames[i] = col!.description
         meta.xKeys[i] = col!.key
       }
