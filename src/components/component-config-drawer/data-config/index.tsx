@@ -95,35 +95,39 @@ export default ({configing, aliasMap, usedAliases, onChange}: DataConfigProps) =
       }
     }
 
-    // todo 添加维度指标时把viewState中的配置加上
+    const id = uuid()
     if (openAttrDrawer === 'dimension') { // 添加维度
-      if (configing?.type === ChartType.DIST) {
-        onChange(produce(configing!, draft => {
-          draft.requestState.dimensions = [...draft.requestState.dimensions ?? [], {
-            id: uuid(),
-            alias,
-            type: col.type
-          }]
+      onChange(produce(configing!, draft => {
+        draft.requestState.dimensions = [...draft.requestState.dimensions ?? [], {
+          id,
+          alias,
+          type: col.type
+        }]
+        if (configing?.type === ChartType.DIST) {
           draft.requestState.options = getType1Opt(col.type)
-        }), newAliasMap)
-      } else {
-        console.log(alias, newAliasMap)
-        onChange(produce(configing!, draft => {
-          draft.requestState.dimensions = [...draft.requestState.dimensions ?? [], {
-            id: uuid(),
-            alias,
-            type: col.type
-          }]
-        }), newAliasMap)
-      }
+        }
+        draft.viewState.dimensions = {
+          ...draft.viewState.dimensions,
+          [id]: {
+            id,
+            useNameAsTitle: true,
+          }
+        }
+      }), newAliasMap)
     } else if (openAttrDrawer === 'measure') { // 添加指标
       onChange(produce(configing!, draft => {
         draft.requestState.measureConfigs = [...draft.requestState.measureConfigs ?? [], {
-          id: uuid(),
+          id,
           alias,
           type: col.type,
           aggregation: col.aggregationConfig.defaultAggregation
         }]
+        draft.viewState.measures = {
+          [id]: {
+            id,
+            useNameAsTitle: true
+          }
+        }
       }), newAliasMap)
     }
   }

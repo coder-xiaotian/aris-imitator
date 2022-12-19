@@ -297,6 +297,7 @@ export default memo(({chartConfig, aliasMap, metaData, addingFilter, filterList,
     handleDataMap[chartConfig.configType][chartConfig.type]([...data.headers, 'xData'], dataSource, chartConfig, meta)
   }, [data, chartConfig.viewState, chartConfig.type])
 
+  console.log("chartConfig.viewState.isInverted: ", chartConfig.viewState.isInverted)
   const comMap = {
     [ComponentType.CHART as string]: <Chart options={chartOptions}
                                             chartType={chartConfig.type}

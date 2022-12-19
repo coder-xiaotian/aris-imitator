@@ -63,18 +63,18 @@ export type ComponentConfig<CT = `${ChartType}`> = {
       [key: string]: {
         useNameAsTitle: boolean
         id: string
-        displayName: string
+        displayName?: string
       }
     }
     measures: {
       [key: string]: {
         chartType?: "area" | "spline" | "areaspline" | "line" | "column"
         displayName?: string
-        colorHex: string
-        formatting: number
+        colorHex?: string
+        formatting?: number
         id: string
         useNameAsTitle: boolean
-        yAxisNumberOfDecimals: number
+        yAxisNumberOfDecimals?: number
       }
     }
     dimensionAxisTitle: string

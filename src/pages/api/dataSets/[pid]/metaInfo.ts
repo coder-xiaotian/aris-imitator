@@ -16,6 +16,7 @@ export default async function handler(
     const r = await request.get(`https://processmining.ariscloud.com/mining/api/int/tenants/xiaotian3/dataSets/${req.query.pid}/metaInfo?locale=zh-CN&apiTag=22A0`)
     res.status(200).json(r.data)
   } catch (e) {
+    console.log(e)
     if (e instanceof AxiosError) {
       res.status(e.response!.status).json(e.response?.data)
       return
