@@ -16,6 +16,8 @@ export default forwardRef(({options, chartType, onSelect, isInverted}: ChartProp
   const containerRef = useRef<HTMLDivElement>(null)
   const echartsInsRef = useRef<EChartsType>()
   function calcBrushOption(startIndex: number, endIndex: number, activeDir?: "leftHandler" | "rightHandler") {
+    const judgeFn = isInverted ? (params: any) => params.dataIndex > startIndex || params.dataIndex < endIndex
+      : (params: any) => params.dataIndex > endIndex || params.dataIndex < startIndex
     return {
       type: "custom",
       id: "filterSelector",
@@ -27,19 +29,31 @@ export default forwardRef(({options, chartType, onSelect, isInverted}: ChartProp
         show: false,
       },
       renderItem(params, api) {
-        if (params.dataIndex < startIndex || params.dataIndex > endIndex) return
+        if (judgeFn(params)) return
 
-        let bandWidth
+        let bandWidth, startX, endX
         if (isInverted) {
           bandWidth = (api.size?.([1, 1]) as number[])[1]
+          startX = api.coord([1, startIndex])[1]
+          endX = api.coord([1, endIndex])[1]
         } else {
           bandWidth = (api.size?.([1]) as number[])[0]
+          startX = api.coord([startIndex])[0]
+          endX = api.coord([endIndex])[0]
         }
         const helfBandWidth = bandWidth / 2
-        const [startX] = api.coord([startIndex])
-        const [endX] = api.coord([endIndex])
-        // @ts-ignore
-        const x = startX - helfBandWidth, y = params.coordSys.y, width = (endX + helfBandWidth) - x, height = params.coordSys.height
+        let x, y, width, height
+        if (isInverted) {
+          // @ts-ignore
+          x = params.coordSys.x
+          y = startX - helfBandWidth
+          // @ts-ignore
+          width = params.coordSys.width
+          height = (endX + helfBandWidth) - y
+        } else {
+          // @ts-ignore
+          x = startX - helfBandWidth, y = params.coordSys.y, width = (endX + helfBandWidth) - x, height = params.coordSys.height
+        }
         return {
           id: "filterGroup",
           type: "group",
@@ -68,9 +82,12 @@ export default forwardRef(({options, chartType, onSelect, isInverted}: ChartProp
               id: "leftBorder",
               type: "rect",
               z2: 100,
-              shape: {
+              shape: isInverted ? {
+                width,
+                height: 1
+              } : {
                 width: 1,
-                height: height
+                height
               },
               style: {
                 fill: "rgb(96, 94, 92)"
@@ -79,7 +96,11 @@ export default forwardRef(({options, chartType, onSelect, isInverted}: ChartProp
               id: "rightBorder",
               type: "rect",
               z2: 100,
-              shape: {
+              shape: isInverted ? {
+                y: height,
+                width,
+                height: 1
+              } : {
                 x: width,
                 width: 1,
                 height: height
@@ -92,7 +113,13 @@ export default forwardRef(({options, chartType, onSelect, isInverted}: ChartProp
             name: "leftHandler",
             type: "rect",
             z2: 100,
-            shape: {
+            shape: isInverted ? {
+              x: width / 2 - 20,
+              y: -8,
+              width: 40,
+              height: 8,
+              r: [2, 2, 0, 0]
+            } : {
               x: -8,
               y: height / 2 - 20,
               width: 8,
@@ -106,7 +133,13 @@ export default forwardRef(({options, chartType, onSelect, isInverted}: ChartProp
             name: "rightHandler",
             type: "rect",
             z2: 100,
-            shape: {
+            shape: isInverted ? {
+              x: width / 2 - 20,
+              y: height,
+              width: 40,
+              height: 8,
+              r: [0, 0, 2, 2]
+            } : {
               x: width,
               y: height / 2 - 20,
               width: 8,
@@ -124,8 +157,8 @@ export default forwardRef(({options, chartType, onSelect, isInverted}: ChartProp
   useEffect(() => {
     if (!containerRef.current) return
 
-    const ins = echartsInsRef.current = echarts.init(containerRef.current)
-    return () => ins.dispose()
+    echartsInsRef.current = echarts.init(containerRef.current)
+    return () => echartsInsRef.current!.dispose()
   }, [containerRef.current])
 
   // 过滤器刷选逻辑
@@ -144,7 +177,6 @@ export default forwardRef(({options, chartType, onSelect, isInverted}: ChartProp
       ins.setOption({
         series: calcBrushOption(startIndex, startIndex),
       })
-      console.log(isInverted, dAxis, dAxis.getCategories(), startIndex)
       onSelect(ecModel.option.meta.xKeys, ecModel.option.meta.xNames, [dAxis.getCategories()[startIndex]])
     }
     function handleMouseOver({event}: any) {
@@ -187,22 +219,25 @@ export default forwardRef(({options, chartType, onSelect, isInverted}: ChartProp
         series: calcBrushOption(startIndex, endIndex, dir)
       })
 
-      let startX = event!.offsetX
+      const offsetXKey = isInverted ? "offsetY" : "offsetX"
+      let startX = event![offsetXKey]
       let movementX: number, tmpStartIdx = startIndex, tmpEndIdx = endIndex
+      const i = isInverted ? 1 : 0
+      const categories = dAxis.getCategories()
+      const judgeFn = isInverted ? () => tmpEndIdx > tmpStartIdx || (tmpEndIdx < 0 || tmpStartIdx >= categories.length)
+        : () => tmpEndIdx < tmpStartIdx || (tmpStartIdx < 0 || tmpEndIdx >= categories.length)
       function handleMousemove(e: MouseEvent) {
-        movementX = Math.abs(e.offsetX - startX)
+        movementX = Math.abs(e[offsetXKey] - startX)
         if (movementX < (bandWidth / 2)) return
 
-        const [newIndex] = ins.convertFromPixel({gridIndex: 0}, [e.offsetX, e.offsetY])
+        const newIndex = ins.convertFromPixel({gridIndex: 0}, [e.offsetX, e.offsetY])[i]
         startX = startX + bandWidth * Math.ceil(movementX / bandWidth)
         if (dir === "leftHandler") {
           tmpStartIdx = newIndex
         } else {
           tmpEndIdx = newIndex
         }
-        const categories = dAxis.getCategories()
-        if (tmpEndIdx < tmpStartIdx) return // 宽度已经是最小了，不能继续拖拽
-        if (tmpStartIdx < 0 || tmpEndIdx >= categories.length) return // 到达grid边界，不能拖拽
+        if (judgeFn()) return // 宽度已经是最小了，不能继续拖拽 or 到达grid边界，不能拖拽
 
         startIndex = tmpStartIdx
         endIndex = tmpEndIdx
@@ -210,8 +245,14 @@ export default forwardRef(({options, chartType, onSelect, isInverted}: ChartProp
           series: calcBrushOption(startIndex, endIndex, dir)
         })
         const values = []
-        for (let i = startIndex; i <= endIndex; i++) {
-          values.push(categories[i])
+        if (isInverted) {
+          for (let i = endIndex; i <= startIndex; i++) {
+            values.push(categories[i])
+          }
+        } else {
+          for (let i = startIndex; i <= endIndex; i++) {
+            values.push(categories[i])
+          }
         }
         onSelect(ecModel.option.meta.xKeys, ecModel.option.meta.xNames, values)
       }
