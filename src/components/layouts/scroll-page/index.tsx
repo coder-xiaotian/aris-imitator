@@ -60,7 +60,7 @@ export default ({children}: PropsWithChildren) => {
   }
 
   return (
-    <div className="relative max-w-[750px] overflow-hidden whitespace-nowrap"
+    <div className="flex relative max-w-[750px] overflow-hidden whitespace-nowrap"
          ref={wrapperRef}>
       {
         showLeft && (
@@ -71,7 +71,7 @@ export default ({children}: PropsWithChildren) => {
           </div>
         )
       }
-      <div ref={listWrapperRef} className="h-full" style={{transform: `translate(${-moveX}px, 0)`, transition: "all .3s ease-in-out"}}>
+      <div ref={listWrapperRef} className="flex h-full" style={{transform: `translate(${-moveX}px, 0)`, transition: "all .3s ease-in-out"}}>
         {children}
       </div>
       {
