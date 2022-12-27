@@ -1,4 +1,4 @@
-import {useContext, useRef, useState} from "react";
+import {useContext, useEffect, useRef, useState} from "react";
 // @ts-ignore
 import ReactGridLayout, {Layout, utils as ReactGridLayoutUtils} from "react-grid-layout";
 import {AliasMapping, ChartType, ComponentConfig, DashBoardInfo} from "../../apis/typing";
@@ -15,6 +15,7 @@ import ResizeObserver from "rc-resize-observer";
 import AddComDrawer from "@/components/add-com-drawer";
 import {v4 as uuid} from "uuid";
 import produce from "immer";
+import classNames from "classnames";
 
 function getLayoutXY(layouts: Layout[], l: Layout) {
   l.x = 0;
@@ -210,9 +211,21 @@ const DashBoard = () => {
   }
 
   const [containerWidth, setContainerWidth] = useState<number>(0)
+  const [isOverflowHidden, setIsOverflowHidden] = useState(false)
+  useEffect(() => {
+    if (!isNaN(configingIndex) || openAddCom) {
+      setIsOverflowHidden(true)
+      setTimeout(() => {
+        setIsOverflowHidden(false)
+      }, 1000)
+    }
+  }, [configingIndex, openAddCom])
+  console.log(isOverflowHidden)
   const emptyListRef = useRef([]) // 不想每次都传新对象导致组件chart-item重新渲染
   return (
-    <ResizeObserver onResize={size => setContainerWidth(size.width)}>
+    <ResizeObserver onResize={size => {
+      setContainerWidth(size.width)
+    }}>
       <Spin wrapperClassName='w-full h-full' spinning={loading}>
         <ReactGridLayout
           width={!isNaN(configingIndex) || openAddCom ? containerWidth - 340 : containerWidth}
@@ -228,6 +241,7 @@ const DashBoard = () => {
 
             return (
               <GridItem disabled={!isEditMode}
+                        className={classNames({"overflow-hidden": isOverflowHidden})}
                         key={i}
                         data-grid={{
                           ...chart.layout,
