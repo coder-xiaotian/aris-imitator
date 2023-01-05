@@ -192,6 +192,8 @@ const DashBoard = () => {
               return res === "null" ? null : res
             })
           })
+        } else if (values.length === 0) {
+          draft.splice(replaceIndexs[i], 1)
         } else {
           draft.splice(replaceIndexs[i], 1, {
             isTemp: true,

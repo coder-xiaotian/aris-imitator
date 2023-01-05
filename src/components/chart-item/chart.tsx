@@ -264,17 +264,31 @@ export default forwardRef(({options, chartType, onSelect, isInverted}: ChartProp
         })
       }, {once: true})
     }
+    function handlePieSelect() {
+      // @ts-ignore
+      const ecModel = ins.getModel()
+      const selectedMap = ecModel.getSeriesByIndex(0).option.selectedMap
+      onSelect(ecModel.option.meta.xKeys, ecModel.option.meta.xNames, Object.keys(selectedMap).reduce((res, key) => {
+        if (selectedMap[key]) {
+          res.push(key)
+        }
+        return res
+      }, [] as string[]))
+    }
     if (chartType !== "pie" && chartType !== "grid") {
       ins.getZr().on("click", handleZrClick)
       ins.on("mouseover", {seriesId: "filterSelector"}, handleMouseOver)
       ins.on("mouseout", {seriesId: "filterSelector"}, handleMouseout)
       ins.on("mousedown", {seriesId: "filterSelector"}, handleMouseDown)
+    } else if (chartType === "pie") {
+      ins.on("selectchanged", handlePieSelect)
     }
     return () => {
       ins.getZr()?.off("click", handleZrClick)
       ins.off("mouseover", handleMouseOver)
       ins.off("mouseout", handleMouseout)
       ins.off("mousedown", handleMouseDown)
+      ins.off("selectchanged", handlePieSelect)
     }
   }, [echartsInsRef.current, isInverted])
 
