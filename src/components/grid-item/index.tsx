@@ -14,6 +14,7 @@ type GridItemProps = {
 export default forwardRef<HTMLDivElement, CardGridProps & GridItemProps>((props, ref) => {
   const {className, children, disabled, selected, scrollIntoView, onConfig, onDelete, ...otherProps} = props
   const [openDel, setOpenDel] = useState(false)
+  const [openToolBox, setOpenToolBox] = useState(false)
   function handleRef(dom: HTMLDivElement) {
     if (!dom) return
 
@@ -26,11 +27,13 @@ export default forwardRef<HTMLDivElement, CardGridProps & GridItemProps>((props,
   }
 
   return (
-    <Popover overlayClassName='p-0'
+    <Popover open={!disabled && openToolBox}
+             onOpenChange={setOpenToolBox}
+             overlayClassName='p-0'
              trigger='click'
              style={{padding: '0'}}
              className='p-0'
-             content={!disabled && (
+             content={(
               <div>
                 <div className="cursor-pointer p-2 inline-flex justify-center items-center hover:bg-gray-100">
                   <CopyOutlined className='!text-blue-400 text-base'/>
