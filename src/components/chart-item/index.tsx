@@ -178,7 +178,14 @@ export default memo(({chartConfig, aliasMap, metaData, addingFilter, filterList,
         const type = ((viewMeasure.chartType === "column" || viewMeasure.chartType === "line" || viewMeasure.chartType === "area")
                         ? CHART_TYPE_MAP[viewMeasure.chartType] : undefined)
                           || CHART_TYPE_MAP[config.type]
-        const res: SeriesOption = {}
+        const res: SeriesOption = {
+          id: key,
+          selectedMode: "multiple",
+          select: {
+            disabled: false
+          },
+          universalTransition: true
+        }
         // 设置名称
         if (viewMeasure.useNameAsTitle) {
           const measureInfo = config.requestState.measureConfigs?.find(item => item.id === key)
@@ -220,8 +227,6 @@ export default memo(({chartConfig, aliasMap, metaData, addingFilter, filterList,
                           : config.type === ChartType.AREA ? {} : undefined
         // @ts-ignore
         res.smooth = viewMeasure.chartType === "spline" || viewMeasure.chartType === "areaspline"
-        res.universalTransition = true
-        res.id = key
         return res
       }),
       dataset: {

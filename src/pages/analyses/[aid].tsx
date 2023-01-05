@@ -220,7 +220,6 @@ const DashBoard = () => {
       }, 1000)
     }
   }, [configingIndex, openAddCom])
-  console.log(isOverflowHidden)
   const emptyListRef = useRef([]) // 不想每次都传新对象导致组件chart-item重新渲染
   return (
     <ResizeObserver onResize={size => {
