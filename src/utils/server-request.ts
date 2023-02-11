@@ -1,14 +1,85 @@
 import axios from 'axios'
+import puppeteer, {Browser} from 'puppeteer';
 
+const userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36'
+const headers = {
+  'content-type': 'application/json',
+  'user-agent': userAgent,
+  'Host': 'processmining.ariscloud.com',
+  'origin': 'https://processmining.ariscloud.com'
+}
 const instance = axios.create({
-  headers: {
-    'content-type': 'application/json',
-    'cookie': 'GKD=%AD%A8%B4%9B%AA%B9%84q%9E%AD%8E%95%C6%D5%8C%99%92%99%9A%A9%A1%B8%CA%9D%95%AC%B7%AB%A7r%96%91%C4%E5%89%DC%A5%98%9A%B4%A9%93%A8%A8; visid_incap_2126585=IBrHp7HFS5Sd+bEk7j9bCUeikGMAAAAAQUIPAAAAAADzZmetFISgkC3hnDUaSH4i; incap_ses_934_2126585=95okaXsKiHWytcqFxzz2DEiikGMAAAAA4lWTmKSlz6L7sP1aBpf/Vg==; AMCVS_5E930F035D0D748A0A495ED1%40AdobeOrg=1; AMCV_5E930F035D0D748A0A495ED1%40AdobeOrg=179643557%7CMCIDTS%7C19334%7CMCMID%7C28240917598257842911400316803290847431%7CMCAAMLH-1671027917%7C11%7CMCAAMB-1671027917%7CRKhpRz8krg2tLO6pguXWp5olkAcUniQYPHaMWWgdJ3xzPWQmdj0y%7CMCOPTOUT-1670430317s%7CNONE%7CvVersion%7C5.5.0; s_cc=true; at_check=true; _fbp=fb.1.1670423120177.767697487; _gcl_au=1.1.1925676179.1670423121; _ga=GA1.1.372638543.1670423121; launch_ext_Ads_prefix_au=1.1.1979046282.1670423121; launch_ext_GA13=GA1.2.372638543.1670423121; launch_ext_GA5=GA1.2.372638543.1670423121; launch_ext_GA18=GA1.2.372638543.1670423121; launch_ext_GA11=GA1.2.372638543.1670423121; launch_ext_GA14=GA1.2.372638543.1670423121; launch_ext_GA9=GA1.2.372638543.1670423121; launch_ext_GA17=GA1.2.372638543.1670423121; launch_ext_GA10=GA1.2.372638543.1670423121; launch_ext_GA15=GA1.2.372638543.1670423121; launch_ext_GA12=GA1.2.372638543.1670423121; launch_ext_GA16=GA1.2.372638543.1670423121; _mkto_trk=id:858-DJP-749&token:_mch-ariscloud.com-1670423120890-38590; nmstat=fbf0d56b-8583-f7f2-a115-670497df042e; _biz_uid=d58966adf37f4f298af7b48ee8439aa3; _biz_flagsA=%7B%22Version%22%3A1%2C%22Mkto%22%3A%221%22%2C%22Ecid%22%3A%2284599820%22%2C%22XDomain%22%3A%221%22%2C%22ViewThrough%22%3A%221%22%2C%22Frm%22%3A%221%22%7D; incap_ses_1556_2126585=e0NAWuS/1Eq91ZXr+wWYFYajkGMAAAAAuIOugqzhm42QKF5SF2Xy5A==; notice_behavior=implied,us; incap_ses_1205_2126585=0ji3EDQUSWRVULgF5gW5EO+kkGMAAAAA9p4r/A0cslI2rfIYLBVJ+Q==; incap_ses_798_2126585=XS1rXHhuQSX2OkW4ixETC5+lkGMAAAAAtqxxvSLhKTV8iBumjE6Csw==; incap_ses_1134_2126585=SqYHbF+4zyQdzbYtzce8D1askGMAAAAAoLRuJZGj2V8TO2/D/W6Ixg==; incap_ses_1512_2126585=PloDYvJbiwOE2r10b7T7FGuskGMAAAAAbsdXUCNfJ+nxczTM7QR+1Q==; s_sq=%5B%5BB%5D%5D; _biz_nA=33; trwv.uid=softwareagwasterracottaemea-1670423121375-471500d4%3A1; mbox=session#a17325577d59495995bed74d492bceae#1670427775|PC#a17325577d59495995bed74d492bceae.32_0#1733670715; _biz_pendingA=%5B%5D; routing.umc=.umc0000000000; _ga_WR7W2ZB88V=GS1.1.1670423148.1.1.1670425959.0.0.0; _ga_68PM0N6EGH=GS1.1.1670423120.1.1.1670425959.6.0.0; _ga_NXPTBLQVHQ=GS1.1.1670423148.1.1.1670425959.0.0.0; locale=zh-CN; accesstoken=eyJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2NzI5MjU5MDcsImp0aSI6InpOZlpXUlNVdkRKeHd5TnV0X1VrVHBMcEpUREdicTFwSThSeDNkWFQyODU0b2pWNVZlSVpuZXJzNW9qTl9aMEx6a1JjeEkyaXM1b0MiLCJzdWIiOiI3NzUxNDYwNjFAcXEuY29tIiwidGVuIjoieGlhb3RpYW4zIiwiYXBpIjpmYWxzZX0.m1m6VCjnKyhbtucisbtAuVVv4-kCNJewzTZM3voNFH8; apt.sid=AP-SBD10BNWGLHK-2-1672925923174-55462328; apt.uid=AP-SBD10BNWGLHK-2-1672925923174-75177149.0.2.0eb5294a-4ab2-4b81-b9a7-a8d758d2863e',
-    'csrftoken': '10WUgI6je6Htlom65EeL7Nl2HkPeEPQcgI6g4Z-oDuQ',
-    'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36',
-    'Host': 'processmining.ariscloud.com',
-    'origin': 'https://processmining.ariscloud.com'
+  headers
+})
+
+let browser: Browser | boolean
+instance.interceptors.request.use((req) => {
+  req.headers!["cookie"] = process.env.accessToken
+  if (req.method === "post") {
+    console.log(`设置csrfToken：${process.env.csrfToken}`)
+    req.headers!["csrftoken"] = process.env.csrfToken
   }
+  return req
+})
+instance.interceptors.response.use((res) => {
+  return res
+}, async (error) => {
+  console.error("请求错误，url：", error.request.path, "，状态码：", error.response.status)
+
+  if (error.response?.status === 401) {
+    if (!browser) {
+      browser = true
+      console.log("重新登录")
+      browser = await puppeteer.launch({headless: true})
+
+      const page = (await browser.pages())[0]
+      await page.setUserAgent(userAgent)
+      await page.setCookie({
+        name: "NecessaryCookiesAccepted",
+        value: "Accepted",
+        domain: ".mc.ariscloud.com",
+        path: "/",
+        expires: 1710593559863,
+        secure: true,
+        sameSite: "Lax",
+        priority: "Medium"})
+      console.log("跳转到登录页")
+      await page.goto("https://mc.ariscloud.com/login")
+      await page.type("#tenantName", process.env.tenantName!)
+      await page.click(".login-form button")
+      await page.type("#userEmail", process.env.account!)
+      await page.type("#userPassword", process.env.password!)
+      console.log("等待登录")
+      await Promise.all([
+        page.waitForResponse(async response => {
+          const status = response.url().endsWith("/service/login") && response.status() === 200
+          if (status) {
+            process.env.csrfToken = (await response.json()).csrfToken
+            console.log("登录成功！csrfToken为：", process.env.csrfToken)
+          }
+          return status
+        }),
+        page.click("#login button[type=\"submit\"]")
+      ])
+      const cookies = await page.cookies()
+      const cookieStr = cookies.map(c => `${c.name}=${c.value}`).join("; ")
+      process.env.accessToken = cookieStr
+      await page.close()
+      await browser.close()
+
+      const {method, path, host, protocol} = error.request
+      console.log(`登录成功后重新发请求：${protocol}//${host}${path}，cookie：${cookieStr}`)
+      const res = await instance[method.toLocaleLowerCase() as "get" | "post"](`${protocol}//${host}${path}`, {
+        headers: {
+          ...headers,
+          "cookie": cookieStr
+        }
+      })
+      console.log("请求重试成功!")
+      return Promise.resolve(res)
+    }
+  }
+  return Promise.reject(error)
 })
 
 export default instance
