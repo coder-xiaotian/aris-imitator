@@ -30,18 +30,22 @@ instance.interceptors.response.use((res) => {
     if (!browser) {
       browser = true
       console.log("重新登录")
-      browser = await puppeteer.launch({
-        headless:true,
-        args: [
-          "–disable-gpu", // GPU硬件加速
-          "–disable-dev-shm-usage", // 创建临时文件共享内存
-          "–disable-setuid-sandbox", // uid沙盒
-          "–no-first-run", // 没有设置首页。在启动的时候，就会打开一个空白页面。
-          "–no-sandbox", // 沙盒模式
-          "–no-zygote",
-          "–single-process" // 单进程运行
-        ]
-      })
+      try {
+        browser = await puppeteer.launch({
+          headless:true,
+          args: [
+            "–disable-gpu", // GPU硬件加速
+            "–disable-dev-shm-usage", // 创建临时文件共享内存
+            "–disable-setuid-sandbox", // uid沙盒
+            "–no-first-run", // 没有设置首页。在启动的时候，就会打开一个空白页面。
+            "–no-sandbox", // 沙盒模式
+            "–no-zygote",
+            "–single-process" // 单进程运行
+          ]
+        })
+      } catch (e) {
+        console.log(e)
+      }
       console.log("打开了浏览器")
 
       const page = (await browser.pages())[0]
