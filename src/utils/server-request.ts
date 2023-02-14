@@ -48,7 +48,7 @@ instance.interceptors.response.use((res) => {
       }
       console.log("打开了浏览器")
 
-      const page = (await browser.pages())[0]
+      const page = (await (browser as Browser).pages())[0]
       await page.setUserAgent(userAgent)
       await page.setCookie({
         name: "NecessaryCookiesAccepted",
@@ -81,7 +81,7 @@ instance.interceptors.response.use((res) => {
       const cookieStr = cookies.map(c => `${c.name}=${c.value}`).join("; ")
       process.env.accessToken = cookieStr
       await page.close()
-      await browser.close()
+      await (browser as Browser).close()
 
       const {method, path, host, protocol} = error.request
       console.log(`登录成功后重新发请求：${protocol}//${host}${path}，cookie：${cookieStr}`)
