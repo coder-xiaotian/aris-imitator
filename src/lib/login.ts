@@ -1,4 +1,5 @@
 import chromium from 'chrome-aws-lambda';
+import {HTTPResponse} from "puppeteer-core";
 
 const userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36'
 export default async () => {
@@ -30,7 +31,7 @@ export default async () => {
   await page.type("#userPassword", process.env.password!)
   console.log("等待登录")
   await Promise.all([
-    page.waitForResponse(async (response) => {
+    page.waitForResponse(async (response: any) => {
       const status = response.url().endsWith("/service/login") && response.status() === 200
       if (status) {
         process.env.csrfToken = (await response.json()).csrfToken
