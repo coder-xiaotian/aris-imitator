@@ -1,5 +1,5 @@
 import axios from 'axios'
-import {Browser} from 'puppeteer';
+import {Browser} from 'puppeteer-core';
 import chromium from 'chrome-aws-lambda';
 
 const userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36'
