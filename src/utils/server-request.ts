@@ -1,5 +1,4 @@
 import axios from 'axios'
-import login from "../lib/login";
 
 const userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36'
 const headers = {
@@ -26,9 +25,11 @@ instance.interceptors.response.use((res) => {
   console.error("请求错误，url：", error.request.path, "，状态码：", error.response.status)
 
   if (error.response?.status === 401) {
+    const {accessToken, csrfToken} = (await axios.get("http://localhost:8000/login")).data
+    process.env.accessToken = accessToken
+    process.env.csrfToken = csrfToken
     const {method, path, host, protocol} = error.request
     console.log(`登录成功后重新发请求：${protocol}//${host}${path}，cookie：${process.env.accessToken}`)
-    await login()
     const res = await instance[method.toLocaleLowerCase() as "get" | "post"](`${protocol}//${host}${path}`, {
       headers: {
         ...headers,
