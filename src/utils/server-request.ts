@@ -1,5 +1,6 @@
 import axios from 'axios'
-import puppeteer, {Browser} from 'puppeteer';
+import {Browser} from 'puppeteer';
+import chromium from 'chrome-aws-lambda';
 
 const userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36'
 const headers = {
@@ -31,18 +32,13 @@ instance.interceptors.response.use((res) => {
       browser = true
       console.log("重新登录")
       try {
-        browser = await puppeteer.launch({
-          headless:true,
-          args: [
-            "–disable-gpu", // GPU硬件加速
-            "–disable-dev-shm-usage", // 创建临时文件共享内存
-            "–disable-setuid-sandbox", // uid沙盒
-            "–no-first-run", // 没有设置首页。在启动的时候，就会打开一个空白页面。
-            "–no-sandbox", // 沙盒模式
-            "–no-zygote",
-            "–single-process" // 单进程运行
-          ]
-        })
+        browser = await chromium.puppeteer.launch({
+          args: [...chromium.args, "--hide-scrollbars", "--disable-web-security"],
+          defaultViewport: chromium.defaultViewport,
+          executablePath: await chromium.executablePath,
+          headless: true,
+          ignoreHTTPSErrors: true,
+        }) as any
       } catch (e) {
         console.log(e)
       }
