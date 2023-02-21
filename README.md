@@ -1,7 +1,7 @@
 # 项目说明
 这是一个模仿ARIS Process Mining（ARIS流程挖掘）的一个前端项目，用于学习其架构思路。数据均通过ARIS线上接口获取。
 
-线上体验地址：
+线上体验地址：http://120.79.199.221:3000/analyses/test
 
 ## 技术栈
 + next.js
