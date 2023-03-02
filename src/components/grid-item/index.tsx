@@ -8,11 +8,13 @@ type GridItemProps = {
   disabled: boolean
   selected: boolean
   scrollIntoView: boolean
+  title: string
+  subTitle: string
   onConfig: () => void
   onDelete: () => void
 }
 export default forwardRef<HTMLDivElement, CardGridProps & GridItemProps>((props, ref) => {
-  const {className, children, disabled, selected, scrollIntoView, onConfig, onDelete, ...otherProps} = props
+  const {title, subTitle, className, children, disabled, selected, scrollIntoView, onConfig, onDelete, ...otherProps} = props
   const [openDel, setOpenDel] = useState(false)
   const [openToolBox, setOpenToolBox] = useState(false)
   function handleRef(dom: HTMLDivElement) {
@@ -59,11 +61,17 @@ export default forwardRef<HTMLDivElement, CardGridProps & GridItemProps>((props,
               </div>
             )}
     >
-      <div className={classNames([className, 'relative bg-white rounded shadow '], {
+      <div className={classNames([className, 'relative flex flex-col bg-white rounded shadow '], {
         'outline outline-2 outline-blue-400': selected,
         'hover:outline hover:outline-1 hover:outline-gray-900': !disabled && !selected
       })} ref={handleRef} {...otherProps}>
-        {children}
+        <div className="flex flex-col items-center">
+          <div className="text-lg text-[#605e5c]">{title}</div>
+          <div className="text-sm text-[#a19f9d]">{subTitle}</div>
+        </div>
+        <div className="flex-grow">
+          {children}
+        </div>
       </div>
     </Popover>
   )

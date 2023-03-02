@@ -248,6 +248,8 @@ const DashBoard = () => {
                           ...chart.layout,
                           resizeHandles: ['se'],
                         }}
+                        title={chart.config.viewState.caption}
+                        subTitle={chart.config.viewState.subtitle}
                         selected={configingIndex === i}
                         scrollIntoView={scrollToIndex === i}
                         onConfig={() => setConfigingIndex(i)}

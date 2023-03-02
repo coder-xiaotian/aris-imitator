@@ -130,11 +130,6 @@ export default forwardRef(({aliasMap, metaData, data, chartType, onSelect, isInv
       }
       const opt: EChartsOption = {
         meta,
-        title: {
-          show: !!config.viewState.caption,
-          text: config.viewState.caption,
-          subtext: config.viewState.subtitle
-        },
         xAxis,
         yAxis,
         tooltip: {
