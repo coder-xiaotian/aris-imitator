@@ -17,6 +17,7 @@ specifiers:
   echarts: ^5.4.0
   eslint: 8.25.0
   eslint-config-next: 12.3.1
+  eslint-config-prettier: ^8.6.0
   express: ^4.18.2
   immer: ^9.0.16
   moment: ^2.29.4
@@ -42,6 +43,7 @@ dependencies:
   classnames: 2.3.2
   dotenv: 16.0.3
   echarts: 5.4.0
+  eslint-config-prettier: 8.6.0_eslint@8.25.0
   express: 4.18.2
   immer: 9.0.16
   moment: 2.29.4
@@ -1245,6 +1247,15 @@ packages:
     transitivePeerDependencies:
       - supports-color
     dev: true
+
+  /eslint-config-prettier/8.6.0_eslint@8.25.0:
+    resolution: {integrity: sha512-bAF0eLpLVqP5oEVUFKpMA+NnRFICwn9X8B5jrR9FcqnYBuPbqWEjTEspPWMj5ye6czoSLDweCzSo3Ko7gGrZaA==}
+    hasBin: true
+    peerDependencies:
+      eslint: '>=7.0.0'
+    dependencies:
+      eslint: 8.25.0
+    dev: false
 
   /eslint-import-resolver-node/0.3.6:
     resolution: {integrity: sha512-0En0w03NRVMn9Uiyn8YRPDKvWjxCWkslUEhGNTdGx15RvPJYQ+lbOlqrlNI2vEAs4pDYK4f/HN2TbDmk5TP0iw==}

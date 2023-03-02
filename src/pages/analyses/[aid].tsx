@@ -9,7 +9,7 @@ import request from '@/utils/client-request'
 import DashboardLayout, {DashBoardContext} from "@/components/layouts/dashboard-layout";
 import {useRouter} from "next/router";
 import ComponentConfigDrawer from "@/components/component-config-drawer";
-import ChartItem from "@/components/chart-item";
+import ComponentItem from "@/components/component-item";
 import {Spin} from "antd";
 import ResizeObserver from "rc-resize-observer";
 import AddComDrawer from "@/components/add-com-drawer";
@@ -254,13 +254,13 @@ const DashBoard = () => {
                         onDoubleClick={() => isEditMode && setConfigingIndex(i)}
                         onDelete={() => handleDeleteCom(i)}
               >
-                <ChartItem key={chart.config.requestState.id}
-                           chartConfig={chart.config}
-                           aliasMap={aliasMap}
-                           metaData={metaData!}
-                           addingFilter={addingFilter}
-                           onSelectFilter={(keys, names, values) => handleSelectFilter(chart.config.requestState.id, keys, names, values)}
-                           filterList={addingFilter ? emptyListRef.current : filterList}
+                <ComponentItem key={chart.config.requestState.id}
+                               componentConfig={chart.config}
+                               aliasMap={aliasMap}
+                               metaData={metaData!}
+                               addingFilter={addingFilter}
+                               onSelectFilter={(keys, names, values) => handleSelectFilter(chart.config.requestState.id, keys, names, values)}
+                               filterList={addingFilter ? emptyListRef.current : filterList}
                 />
               </GridItem>
             )
