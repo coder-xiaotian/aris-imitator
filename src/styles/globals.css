@@ -9,3 +9,74 @@ body {
 .ant-popover-inner-content {
     padding: 0 !important;
 }
+
+body, div {
+    scrollbar-base-color: #e1e1e1;scrollbar-3dlight-color: #e8e8e8;
+    scrollbar-arrow-color: #158eb7;scrollbar-darkshadow-color: #e1e1e1;
+    scrollbar-face-color: #e8e8e8;scrollbar-highlight-color: #e8e8e8;scrollbar-shadow-color: #e8e8e8;scrollbar-track-color: #f2f2f2;
+}
+
+div::-webkit-scrollbar-thumb,::-webkit-scrollbar-thumb {
+    border: 3px solid #fbfbfb;
+    background-color: #e8e8e8;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    border: 3px solid #fbfbfb;
+    background-color: #0563DB;
+}
+
+::-webkit-scrollbar {
+    width: 14px;
+    height: 14px;
+}
+
+::-webkit-scrollbar-track {
+    background-color: #fbfbfb;
+    width: 14px;
+    height: 14px;
+}
+
+::-webkit-scrollbar-button {
+    background-repeat: no-repeat;
+    border-left: 1px solid #d2d2d2;
+}
+
+::-webkit-scrollbar-button:start:decrement {
+    display: block;
+}
+
+::-webkit-scrollbar-button:end:increment {
+    display: block;
+}
+
+::-webkit-scrollbar-button:hover {
+    background-color: #cecece;
+}
+
+::-webkit-scrollbar-button:vertical:increment {
+    background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAcAAAAECAYAAABCxiV9AAAAI0lEQVR4XmNgTb79E4j/Y8MMIIBNAVgCBpAVoEjAAEgBMh8AngIkCUurGJsAAAAASUVORK5CYII=");
+}
+
+::-webkit-scrollbar-button:vertical:decrement {
+    background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAcAAAAECAYAAABCxiV9AAAAIklEQVR4XmNgQAKsybd/IvPhACjxH4pRFSBJoCrAIgFXAACBTyQJSw2h9gAAAABJRU5ErkJggg==");
+}
+
+::-webkit-scrollbar-button:horizontal:increment {
+    background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAHCAYAAAAvZezQAAAAKElEQVR4XmNgTb79nwEZgARQBGECcEFkASD+iSzwE1kFhAMVQHCAAACicyQJoiYR8gAAAABJRU5ErkJggg==");
+}
+
+::-webkit-scrollbar-button:horizontal:decrement {
+    background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAHCAYAAAAvZezQAAAAJElEQVR4XmNgQAKsybd/onCA+D8KByyAzEFWgSqALAgXgAkCAOj8JAm43/K9AAAAAElFTkSuQmCC");
+}
+
+::-webkit-scrollbar-button:vertical:increment,::-webkit-scrollbar-button:vertical:decrement,::-webkit-scrollbar-button:horizontal:increment,::-webkit-scrollbar-button:horizontal:decrement {
+    background-position: center;
+}
+
+::-webkit-scrollbar-button,::-webkit-scrollbar-corner {
+    width: 14px;
+    height: 15px;
+    background-color: #ebebeb;
+    border: 1px solid #d2d2d2;
+}

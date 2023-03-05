@@ -268,7 +268,8 @@ const DashBoard = () => {
             )
           })}
         </ReactGridLayout>
-        <ComponentConfigDrawer configing={charts[configingIndex]?.config}
+        <ComponentConfigDrawer open={!!configingIndex}
+                               configing={charts[configingIndex]?.config}
                                aliasMap={aliasMap}
                                usedAliases={usedAliases}
                                onClose={() => setConfigingIndex(NaN)}

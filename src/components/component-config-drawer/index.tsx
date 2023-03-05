@@ -17,6 +17,7 @@ type ComponentConfigProps = {
   aliasMap: AliasMapping
   onChangeConfig: ConfigChangeHandler
   usedAliases: string[]
+  open: boolean
 }
 enum OptionType {
   DATA_CONFIG,
@@ -24,7 +25,7 @@ enum OptionType {
   DIMENSION_CONFIG,
   QUOTA_CONFIG
 }
-export default ({configing, onClose, aliasMap, usedAliases, onChangeConfig}: ComponentConfigProps) => {
+export default ({open, configing, onClose, aliasMap, usedAliases, onChangeConfig}: ComponentConfigProps) => {
   const {metaData} = useContext(DashBoardContext)
   const options = [{
     label: "设置",
@@ -94,7 +95,7 @@ export default ({configing, onClose, aliasMap, usedAliases, onChangeConfig}: Com
     )
   }
   return (
-    <Drawer open={!!configing}
+    <Drawer open={open}
             title="配置"
             mask={false}
             width={340}
