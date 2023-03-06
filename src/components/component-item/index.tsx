@@ -98,7 +98,12 @@ export default memo(({componentConfig, aliasMap, metaData, addingFilter, filterL
 
   const comMap = {
     [ComponentType.CHART as string]: componentConfig.type === "grid" ?
-                                        <Table data={data}/> :
+                                        <Table
+                                          data={data as any}
+                                          aliasMap={aliasMap}
+                                          metaData={metaData}
+                                          componentConfig={componentConfig}
+                                        /> :
                                             <Chart
                                               aliasMap={aliasMap}
                                               metaData={metaData}

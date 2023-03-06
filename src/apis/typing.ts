@@ -176,8 +176,8 @@ export type ComponentRequestInfo = {
   "size": number
 }
 
-export type ChartDataResponse = {
+export type ChartDataResponse<T = string[] | [{from: string, to?: string}, string]> = {
   headers: string[]
-  rows: [string, string][] | [{from: string, to?: string}, string][]
+  rows: T[]
   status: "Success"
 }
