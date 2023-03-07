@@ -1,7 +1,7 @@
 import {getColData} from "@/components/component-config-drawer/utils";
 import {Button, Popover, Tooltip} from "antd";
 import {ColumnInfo, ColumnType, MetaData} from "../../../apis/metaInfo";
-import {DeleteOutlined, DownOutlined, FunctionOutlined} from "@ant-design/icons";
+import {DeleteOutlined, DownOutlined, EyeInvisibleFilled, FunctionOutlined} from "@ant-design/icons";
 import {Aggregation, AliasMapping, AttrConfig} from "../../../apis/typing";
 import classNames from "classnames";
 import moment from "moment";
@@ -12,6 +12,7 @@ export type AggMethodInfo = {
   description: string
 }
 type AttrItemProps = {
+  isUnavailable?: boolean
   isDimension: boolean
   aliasMap: AliasMapping
   metaData: MetaData | undefined
@@ -20,7 +21,7 @@ type AttrItemProps = {
   onSelectGranularity: (value: any) => void
   onSelectAgg?: (curAgg: AggMethodInfo, colInfo: ColumnInfo) => void
 }
-export default ({isDimension, attrInfo, aliasMap, metaData, onDelete, onSelectGranularity, onSelectAgg}: AttrItemProps) => {
+export default ({isDimension, isUnavailable = false, attrInfo, aliasMap, metaData, onDelete, onSelectGranularity, onSelectAgg}: AttrItemProps) => {
   const col = getColData(attrInfo.alias, aliasMap, metaData)
   let text = <span className='font-medium'>{col?.description}</span>
   const aggInfo = col?.aggregationConfig.aggregations.find(agg => agg.key === attrInfo.aggregation)
@@ -43,7 +44,10 @@ export default ({isDimension, attrInfo, aliasMap, metaData, onDelete, onSelectGr
              )}
     >
       <div className='group flex justify-between items-center my-1 px-2 hover:bg-slate-100 transition-all'>
-        <span>{text}</span>
+        <div className="flex items-center">
+          {isUnavailable && <EyeInvisibleFilled className="!text-slate-400"/>}
+          <span className="inline-block ml-1">{text}</span>
+        </div>
         <Button.Group>
           <Button className='!invisible'/>
           <GranularitiesPopover attrInfo={attrInfo} onSelect={onSelectGranularity}/>

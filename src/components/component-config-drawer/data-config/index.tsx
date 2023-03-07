@@ -282,6 +282,7 @@ export default ({configing, aliasMap, usedAliases, onChange}: DataConfigProps) =
                                               aliasMap={aliasMap}
                                               metaData={metaData}
                                               isDimension={false}
+                                              isUnavailable={configing?.type === ChartType.PIE && i !== 0}
                                               onDelete={() => handleDeleteMeasure(i)}
                                               onSelectGranularity={value => handleSelectMeasureGranularity(i, value)}
                                               onSelectAgg={(curAgg, colInfo) => setEditAggInfo({curAgg, colInfo, index: i})}
