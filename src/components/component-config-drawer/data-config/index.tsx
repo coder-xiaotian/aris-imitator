@@ -194,9 +194,13 @@ export default ({configing, aliasMap, usedAliases, onChange}: DataConfigProps) =
     (configing?.type === ChartType.PIE && configing.requestState.measureConfigs?.length === 1) ||
     (configing?.type === ChartType.DIST && configing.requestState.measureConfigs?.length === 1)
   // 显示分区
-  const isPartitionVisible = configing?.type !== ChartType.TIME && configing?.type !== ChartType.PIE && configing?.type !== ChartType.DIST
+  const isPartitionVisible = configing?.type !== ChartType.TIME && configing?.type !== ChartType.PIE && configing?.type !== ChartType.DIST && configing?.type !== ChartType.GRID
   // 显示排序
   const isSortVisible = configing?.type !== ChartType.TIME && configing?.type !== ChartType.DIST
+  // 显示堆叠
+  const isStackVisible = configing?.type !== ChartType.TIME && configing?.type !== ChartType.PIE && configing?.type !== ChartType.DIST && configing?.type !== ChartType.GRID
+  // 显示反转轴
+  const isReverseVisible = configing?.type !== ChartType.TIME && configing?.type !== ChartType.PIE && configing?.type !== ChartType.DIST && configing?.type !== ChartType.GRID
 
   return (
     <>
@@ -331,14 +335,14 @@ export default ({configing, aliasMap, usedAliases, onChange}: DataConfigProps) =
           <Bucket configing={configing} onChange={onChange}/>
         )
       }
-      {configing?.type !== ChartType.TIME && configing?.type !== ChartType.PIE && configing?.type !== ChartType.DIST && (
+      {isStackVisible && (
         <InlineLabel title='堆叠'>
           <Switch checked={configing?.viewState.isStacked} onChange={v => onChange(produce(configing!, draft => {
             draft.viewState.isStacked = v
           }))}/>
         </InlineLabel>
       )}
-      {configing?.type !== ChartType.TIME && configing?.type !== ChartType.PIE && configing?.type !== ChartType.DIST && (
+      {isReverseVisible && (
         <InlineLabel title='反转轴'>
           <Switch checked={configing?.viewState.isInverted} onChange={v => onChange(produce(configing!, draft => {
             draft.viewState.isInverted = v
