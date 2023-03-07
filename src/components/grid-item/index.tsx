@@ -1,4 +1,4 @@
-import {forwardRef, useEffect, useState} from "react";
+import {forwardRef, useState} from "react";
 import classNames from "classnames";
 import {CardGridProps} from "antd/es/card";
 import {Button, Popover} from "antd";
@@ -61,7 +61,7 @@ export default forwardRef<HTMLDivElement, CardGridProps & GridItemProps>((props,
               </div>
             )}
     >
-      <div className={classNames([className, 'relative flex flex-col bg-white rounded shadow '], {
+      <div className={classNames([className, 'relative flex flex-col bg-white rounded shadow'], {
         'outline outline-2 outline-blue-400': selected,
         'hover:outline hover:outline-1 hover:outline-gray-900': !disabled && !selected
       })} ref={handleRef} {...otherProps}>

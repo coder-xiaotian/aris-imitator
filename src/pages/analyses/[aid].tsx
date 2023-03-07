@@ -57,7 +57,7 @@ const DashBoard = () => {
   const [configingIndex, setConfigingIndex] = useState<number>(NaN)
   const [scrollToIndex, setScrollToIndex] = useState<number>()
 
-  let charts = dashboardData?.content?.configurationState?.charts ?? []
+  const charts = dashboardData?.content?.configurationState?.charts ?? []
   const aliasMap = dashboardData?.aliasMapping ?? {special: {}, normal: {}, script: {}}
   const usedAliases = dashboardData?.content.usedAliases ?? []
   const handleChangeConfig: ConfigChangeHandler = (newChart, newAliasMap, usedAliases) => {
@@ -93,11 +93,12 @@ const DashBoard = () => {
     // 调接口，更新dashboard数据
     // updateDashboardDataReq(dashboardData)
   }
-  function handleDragStop(layout: Layout[]) {
-    layout.forEach(l => {
-      charts[Number(l.i)].layout = l
-    })
-    setDashboardData({...dashboardData!})
+  function handleDragStop(layouts: Layout[]) {
+    setDashboardData(produce(dashboardData!, draft => {
+      layouts.forEach(l => {
+        draft.content.configurationState.charts[Number(l.i)].layout = l
+      })
+    }))
     // 调接口，更新dashboard数据
     // updateDashboardDataReq(dashboardData)
   }
@@ -268,7 +269,7 @@ const DashBoard = () => {
             )
           })}
         </ReactGridLayout>
-        <ComponentConfigDrawer open={!!configingIndex}
+        <ComponentConfigDrawer open={!isNaN(configingIndex)}
                                configing={charts[configingIndex]?.config}
                                aliasMap={aliasMap}
                                usedAliases={usedAliases}

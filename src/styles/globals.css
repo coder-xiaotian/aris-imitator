@@ -80,3 +80,29 @@ div::-webkit-scrollbar-thumb,::-webkit-scrollbar-thumb {
     background-color: #ebebeb;
     border: 1px solid #d2d2d2;
 }
+
+/** react-grid-layout 样式 **/
+.react-grid-item .react-resizable-handle {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+}
+.react-grid-item .react-resizable-handle::after {
+    content: "";
+    position: absolute;
+    right: 3px;
+    bottom: 3px;
+    width: 5px;
+    height: 5px;
+    border-right: 2px solid rgba(0, 0, 0, 0.4);
+    border-bottom: 2px solid rgba(0, 0, 0, 0.4);
+}
+.react-resizable-hide .react-resizable-handle {
+    display: none;
+}
+.react-grid-item .react-resizable-handle.react-resizable-handle-se {
+    bottom: 0;
+    right: 0;
+    cursor: se-resize;
+}
+/** react-grid-layout 样式 end **/
