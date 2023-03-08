@@ -127,18 +127,14 @@ export default memo(({componentConfig, aliasMap, metaData, addingFilter, filterL
     }
     setRenderCom(comMap[componentConfig.configType])
   }, [loading, componentConfig, metaData, aliasMap])
-  const comRef = useRef<{resize: () => void, clearSelection?: () => void}>()
-  const {run: handleResize} = useDebounceFn(() => {
-    comRef.current?.resize()
-  }, {wait: 500})
   useEffect(() => {
     if (addingFilter) return
     comRef.current?.clearSelection?.()
   }, [addingFilter])
-  console.log(componentConfig.viewState.dimensions)
+  const comRef = useRef<{resize: () => void, clearSelection?: () => void}>()
 
   return (
-    <ResizeObserver onResize={handleResize}>
+    <ResizeObserver onResize={() => comRef.current?.resize?.()}>
       <Spin spinning={loading} wrapperClassName='w-full h-full'>
         {error ? (
           // @ts-ignore

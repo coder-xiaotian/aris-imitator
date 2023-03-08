@@ -40,6 +40,7 @@ export default forwardRef(({aliasMap, metaData, data, chartType, onSelect, isInv
     return () => echartsInsRef.current!.dispose()
   }, [containerRef.current])
 
+  // 设置图表配置逻辑
   const [chartOptions, setChartOptions] = useState<EChartsOption>({})
   useEffect(() => {
     if (!data) return
@@ -218,8 +219,9 @@ export default forwardRef(({aliasMap, metaData, data, chartType, onSelect, isInv
 
   // 过滤器刷选逻辑
   useEffect(() => {
-    const ins = echartsInsRef.current!
+    if (componentConfig.type === ChartType.TIME) return
 
+    const ins = echartsInsRef.current!
     function handleZrClick(e: ElementEvent) {
       // 点击事件不在第一个坐标系中，则不做响应
       if (!ins.containPixel("grid", [e.offsetX, e.offsetY])) return
@@ -345,7 +347,7 @@ export default forwardRef(({aliasMap, metaData, data, chartType, onSelect, isInv
       ins.off("mousedown", handleMouseDown)
       ins.off("selectchanged", handlePieSelect)
     }
-  }, [echartsInsRef.current, isInverted])
+  }, [echartsInsRef.current, isInverted, componentConfig.type])
   function calcBrushOption(startIndex: number, endIndex: number, activeDir?: "leftHandler" | "rightHandler") {
     const judgeFn = isInverted ? (params: any) => params.dataIndex > startIndex || params.dataIndex < endIndex
       : (params: any) => params.dataIndex > endIndex || params.dataIndex < startIndex
@@ -490,7 +492,9 @@ export default forwardRef(({aliasMap, metaData, data, chartType, onSelect, isInv
     echartsInsRef.current?.setOption(chartOptions, true)
   }, [echartsInsRef.current, chartOptions])
   useImperativeHandle(ref, () => ({
-    resize: echartsInsRef.current?.resize,
+    resize: () => {
+      echartsInsRef.current?.resize()
+    },
     clearSelection: () => {
       const options = echartsInsRef.current?.getOption()
       // @ts-ignore

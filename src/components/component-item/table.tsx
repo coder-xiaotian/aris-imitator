@@ -86,7 +86,6 @@ export default ({data, componentConfig, metaData, aliasMap}: TableProps) => {
   }
   function getGridTemplateColumns() {
     let str = ""
-    console.log(componentConfig.viewState.dimensions)
     data?.headers.forEach(h => {
       const {colInfo, type} = getColInfo(h)
       if (type === "dimension") {
