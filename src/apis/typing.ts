@@ -64,6 +64,7 @@ export type ComponentConfig<CT = `${ChartType}`> = {
         useNameAsTitle: boolean
         id: string
         displayName?: string
+        cellSpan?: number
       }
     }
     measures: {
@@ -75,6 +76,7 @@ export type ComponentConfig<CT = `${ChartType}`> = {
         id: string
         useNameAsTitle: boolean
         yAxisNumberOfDecimals?: number
+        cellSpan?:number
       }
     }
     dimensionAxisTitle: string

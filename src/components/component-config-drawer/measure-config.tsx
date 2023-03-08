@@ -1,5 +1,5 @@
 import Label from "@/components/label";
-import {Input, Select, Switch} from "antd";
+import {Input, InputNumber, Select, Switch} from "antd";
 import {ChartType, ComponentConfig} from "../../apis/typing";
 import {ConfigChangeHandler} from "@/pages/analyses/[aid]";
 import produce from "immer";
@@ -15,6 +15,7 @@ export default ({configing, id, name, onChange}: MeasureConfitProps) => {
   const alternativeSeriesType = measureConfig.chartType ||
     ((configing.type === "column" || configing.type === "line" || configing.type === "area")
       ? configing.type as Exclude<ComponentConfig["type"], "grid"|"singleKPI"|"dist"|"time"|"pie"> : undefined)
+  const cellSpan = configing.viewState.measures[id].cellSpan || 1
 
   return (
     <div>
@@ -57,6 +58,17 @@ export default ({configing, id, name, onChange}: MeasureConfitProps) => {
           draft.viewState.measures[id].displayName = e.target.value
         }))} />
       </Label>
+      {
+        configing.type === ChartType.GRID && (
+          <Label title='单元格大小'>
+            <InputNumber className='!w-full !mt-2' min={1} value={cellSpan} onChange={(value: number | null) => {
+              onChange(produce(configing, draft => {
+                draft.viewState.measures[id].cellSpan = value!
+              }))
+            }}/>
+          </Label>
+        )
+      }
     </div>
   )
 }

@@ -70,29 +70,54 @@ export default ({data, componentConfig, metaData, aliasMap}: TableProps) => {
   }
 
   function renderHeader(h: string) {
-    const re = /(x|y)(\d)?/
-    const [_, axis, index = 0] = re.exec(h) ?? []
-    let colInfo
-    if(axis === "x") {
-      colInfo = componentConfig.requestState.dimensions![index as number]
-    } else {
-      colInfo = componentConfig.requestState.measureConfigs![index as number]
-    }
+    const {colInfo} = getColInfo(h)
     const col = getColData(colInfo.alias, aliasMap, metaData)
 
     return (
-      <div key={h} className="cursor-pointer flex items-center p-2 border-r border-r-slate-200"
+      <div key={h} className="cursor-pointer truncate flex items-center p-2 border-r border-r-slate-200"
            onClick={() => handleSort(h)}
+           title={col?.description}
       >
         {sortInfo?.field === h && sortInfo?.sort === "asc" && <ArrowUpOutlined className="!text-gray-400"/>}
         {sortInfo?.field === h && sortInfo?.sort === "desc" && <ArrowDownOutlined className="!text-gray-400"/>}
-        <span className="inline-block ml-1">{col?.description}</span>
+        <span className="truncate inline-block ml-1">{col?.description}</span>
       </div>
     )
   }
+  function getGridTemplateColumns() {
+    let str = ""
+    console.log(componentConfig.viewState.dimensions)
+    data?.headers.forEach(h => {
+      const {colInfo, type} = getColInfo(h)
+      if (type === "dimension") {
+        str += `${componentConfig.viewState.dimensions[colInfo.id]?.cellSpan ?? 1}fr `
+      } else {
+        str += `${componentConfig.viewState.measures[colInfo.id]?.cellSpan ?? 1}fr `
+      }
+    })
+
+    return str
+  }
+  function getColInfo(h: string) {
+    const re = /(x|y)(\d)?/
+    const [_, axis, index = 0] = re.exec(h) ?? []
+    let colInfo, type
+    if(axis === "x") {
+      type = "dimension"
+      colInfo = componentConfig.requestState.dimensions![index as number]
+    } else {
+      type === "measure"
+      colInfo = componentConfig.requestState.measureConfigs![index as number]
+    }
+
+    return {
+      colInfo,
+      type
+    }
+  }
   return (
     <div className="flex-grow flex flex-col">
-      <div style={{display: "grid", gridTemplateColumns: `repeat(${data?.headers?.length}, 1fr)`}}
+      <div style={{display: "grid", gridTemplateColumns: getGridTemplateColumns()}}
            className="border-y border-y-slate-200"
       >
         {data?.headers?.map(h => renderHeader(h))}

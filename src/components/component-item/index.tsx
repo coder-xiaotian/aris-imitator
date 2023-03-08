@@ -126,7 +126,7 @@ export default memo(({componentConfig, aliasMap, metaData, addingFilter, filterL
         />
     }
     setRenderCom(comMap[componentConfig.configType])
-  }, [loading])
+  }, [loading, componentConfig, metaData, aliasMap])
   const comRef = useRef<{resize: () => void, clearSelection?: () => void}>()
   const {run: handleResize} = useDebounceFn(() => {
     comRef.current?.resize()
@@ -135,6 +135,7 @@ export default memo(({componentConfig, aliasMap, metaData, addingFilter, filterL
     if (addingFilter) return
     comRef.current?.clearSelection?.()
   }, [addingFilter])
+  console.log(componentConfig.viewState.dimensions)
 
   return (
     <ResizeObserver onResize={handleResize}>

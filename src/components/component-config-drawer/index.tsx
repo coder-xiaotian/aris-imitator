@@ -1,5 +1,5 @@
 import {Button, Drawer, Select} from "antd";
-import {AliasMapping, ComponentConfig} from "../../apis/typing";
+import {AliasMapping, ChartType, ComponentConfig} from "../../apis/typing";
 import {useContext, useEffect, useState} from "react";
 import {DashBoardContext} from "@/components/layouts/dashboard-layout";
 import DataConfig from "@/components/component-config-drawer/data-config";
@@ -30,10 +30,10 @@ export default ({open, configing, onClose, aliasMap, usedAliases, onChangeConfig
   const options = [{
     label: "设置",
     value: `${OptionType.DATA_CONFIG.toString()}:${OptionType.DATA_CONFIG.toString()}:`,
-  }, {
+  }, ...(configing?.type !== ChartType.GRID ? [{
     label: "自定义",
     value: `${OptionType.VIEW_CONFIG.toString()}:${OptionType.VIEW_CONFIG.toString()}:`,
-  },
+  }] : []),
     ...configing?.requestState.dimensions?.map((item, i) => {
       const colInfo = getColData(item.alias, aliasMap, metaData)
       return {
