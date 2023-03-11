@@ -1,7 +1,7 @@
 import Label from "@/components/label";
 import {Input, InputNumber, Switch} from "antd";
 import {ChartType, ComponentConfig} from "../../apis/typing";
-import {ConfigChangeHandler} from "@/pages/analyses/[aid]";
+import {ConfigChangeHandler} from "@/pages/[projectName]/analyses/[aid]";
 import produce from "immer";
 
 type DimensionConfigProps = {

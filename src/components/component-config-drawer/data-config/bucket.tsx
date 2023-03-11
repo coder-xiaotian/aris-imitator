@@ -1,7 +1,7 @@
 import Label from "@/components/label";
 import {InputNumber, Radio, Select, Switch} from "antd";
 import {ComponentConfig} from "../../../apis/typing";
-import {ConfigChangeHandler} from "@/pages/analyses/[aid]";
+import {ConfigChangeHandler} from "@/pages/[projectName]/analyses/[aid]";
 import {divide, multiply} from "@/utils/math";
 import {ValueType} from "../../../apis/metaInfo";
 import produce from "immer";

@@ -1,8 +1,8 @@
 import {useContext, useEffect, useRef, useState} from "react";
 // @ts-ignore
 import ReactGridLayout, {Layout, utils as ReactGridLayoutUtils} from "react-grid-layout";
-import {AliasMapping, ChartType, ComponentConfig, DashBoardInfo} from "../../apis/typing";
-import GridItem from "../../components/grid-item";
+import {AliasMapping, ChartType, ComponentConfig, DashBoardInfo} from "../../../apis/typing";
+import GridItem from "@/components/grid-item";
 import 'react-grid-layout/css/styles.css'
 import {useDebounceFn, useRequest} from "ahooks";
 import request from '@/utils/client-request'
@@ -37,9 +37,10 @@ const DashBoard = () => {
   // 是否编辑模式
   const {isEditMode, metaData, openAddCom, closeAddCom, filterList, setFilterList, setConfigingFilterId, configingFilterId} = useContext(DashBoardContext)
   const router = useRouter()
-  const {aid, tab} = router.query
+  const {projectName, aid, tab} = router.query
+  console.log(projectName)
   const {data: dashboardData, mutate: setDashboardData, loading} = useRequest(async () => {
-    const res = await request.get<any, DashBoardInfo>(`/api/projects/my_test/analyses/${aid}/tabs/${tab}?locale=zh-CN&apiTag=22A0`)
+    const res = await request.get<any, DashBoardInfo>(`/api/projects/${projectName}/analyses/${aid}/tabs/${tab}?locale=zh-CN&apiTag=22A0`)
     res.content = JSON.parse(res.content as any)
     return res
   }, {
@@ -48,7 +49,7 @@ const DashBoard = () => {
   })
   const {run: updateDashboardDataReq} = useDebounceFn(async (dbData: DashBoardInfo) => {
     dbData.content = JSON.stringify(dbData.content) as any
-    const res = await request.put<any, DashBoardInfo>(`/api/projects/my_test/analyses/${aid}/tabs/${tab}?locale=zh-CN&apiTag=22A0`, dbData)
+    const res = await request.put<any, DashBoardInfo>(`/api/projects/${projectName}/analyses/${aid}/tabs/${tab}?locale=zh-CN&apiTag=22A0`, dbData)
     res.content = JSON.parse(res.content as any)
     setDashboardData(res)
   }, {wait: 500})

@@ -13,7 +13,7 @@ export default async function handler(
   if (req.method !== 'GET') return
 
   try {
-    const r = await request.get(`https://processmining.ariscloud.com/mining/api/int/tenants/xiaotian3/dataSets/${req.query.pid}/metaInfo?locale=zh-CN&apiTag=22A0`)
+    const r = await request.get(`https://processmining.ariscloud.com/mining/api/int/tenants/${process.env.tenantName}/dataSets/${req.query.pid}/metaInfo?locale=zh-CN&apiTag=22A0`)
     res.status(200).json(r.data)
   } catch (e) {
     if (e instanceof AxiosError) {

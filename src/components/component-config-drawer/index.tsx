@@ -8,7 +8,7 @@ import DimensionConfig from "@/components/component-config-drawer/dimension-conf
 import MeasureConfig from "@/components/component-config-drawer/measure-config";
 import {getColData} from "@/components/component-config-drawer/utils";
 import {CloseOutlined} from "@ant-design/icons";
-import {ConfigChangeHandler} from "@/pages/analyses/[aid]";
+import {ConfigChangeHandler} from "@/pages/[projectName]/analyses/[aid]";
 import classNames from "classnames";
 
 type ComponentConfigProps = {

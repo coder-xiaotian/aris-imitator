@@ -22,14 +22,14 @@ export const DashBoardContext = createContext<{
 }>({} as any)
 export default (page: ReactElement) => {
   const router = useRouter()
-  const {aid, tab} = router.query
-  const {data: tabs, loading: loadingTabs} = useRequest<AnalysisTabInfo[], []>(() => request.get(`/api/projects/my_test/analyses/${aid}/tabs`), {
+  const {projectName, aid, tab} = router.query
+  const {data: tabs, loading: loadingTabs} = useRequest<AnalysisTabInfo[], []>(() => request.get(`/api/projects/${projectName}/analyses/${aid}/tabs`), {
     ready: Boolean(aid),
     onSuccess(data) {
-      router.push(`/analyses/${aid}?tab=${data?.[0].tabKey}`)
+      router.push(`/${projectName}/analyses/${aid}?tab=${data?.[0].tabKey}`)
     }
   })
-  const {data: metaData, loading: loadingMetaData} = useRequest<MetaData, []>(() => request.get("/api/dataSets/my_test/metaInfo?locale=zh-CN&apiTag=22A0"), {
+  const {data: metaData, loading: loadingMetaData} = useRequest<MetaData, []>(() => request.get(`/api/dataSets/${projectName}/metaInfo?locale=zh-CN&apiTag=22A0`), {
     ready: Boolean(aid) && !!tabs
   })
   // 过滤器数据
@@ -129,7 +129,7 @@ export default (page: ReactElement) => {
         {tabs?.map(item => <li key={item.tabKey} className={classNames('cursor-pointer inline-flex justify-center items-center\n' +
           '         h-full ml-2 px-2 hover:bg-white', {
           'border-b-4 border-b-sky-500': tab === item.tabKey
-        })} onClick={() => router.push(`/analyses/${aid}?tab=${item.tabKey}`)}>{item.name}</li>)}
+        })} onClick={() => router.push(`/${projectName}/analyses/${aid}?tab=${item.tabKey}`)}>{item.name}</li>)}
       </ul>
     </Spin>
   )

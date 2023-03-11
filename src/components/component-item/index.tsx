@@ -18,6 +18,7 @@ import request from '@/utils/client-request'
 import ResizeObserver from "rc-resize-observer";
 import {calcBucketIntervalVal} from "@/components/component-config-drawer/data-config/bucket";
 import Table from "@/components/component-item/table";
+import {useRouter} from "next/router";
 
 type ComponentItemProps = {
   componentConfig: ComponentConfig
@@ -28,6 +29,8 @@ type ComponentItemProps = {
   filterList: FilterInfo[]
 }
 export default memo(({componentConfig, aliasMap, metaData, addingFilter, filterList, onSelectFilter}: ComponentItemProps) => {
+  const router = useRouter()
+  const {projectName} = router.query
   // 获取图表的数据
   const {data, loading, error, run: requstData} = useRequest((fList = []) => {
     function handleMeasureParams() {
@@ -47,7 +50,7 @@ export default memo(({componentConfig, aliasMap, metaData, addingFilter, filterL
         }
       }) ?? []
     }
-    return request.post<any, ChartDataResponse, ComponentRequestInfo>('/api/dataSets/my_test/query/simple',
+    return request.post<any, ChartDataResponse, ComponentRequestInfo>(`/api/dataSets/${projectName}/query/simple`,
       {
         considerDistinct: false,
         includeNullValues: componentConfig.requestState.includeNullValues,

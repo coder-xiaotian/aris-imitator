@@ -9,7 +9,7 @@ import {ColumnInfo, TableData, ValueType} from "../../../apis/metaInfo";
 import AttributeDrawer from "@/components/component-config-drawer/data-config/attribute-drawer";
 import classNames from "classnames";
 import {v4 as uuid} from 'uuid'
-import {ConfigChangeHandler} from "@/pages/analyses/[aid]";
+import {ConfigChangeHandler} from "@/pages/[projectName]/analyses/[aid]";
 import AttrItem, {AggMethodInfo} from "@/components/component-config-drawer/data-config/attr-item";
 import EditAggDrawer from "@/components/component-config-drawer/data-config/edit-agg-drawer";
 import Bucket, {getType1Opt} from "@/components/component-config-drawer/data-config/bucket";
