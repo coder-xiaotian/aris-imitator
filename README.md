@@ -1,7 +1,7 @@
 # 项目说明
 这是一个模仿ARIS Process Mining（ARIS流程挖掘）的一个前端项目，用于学习其架构思路。数据均通过ARIS线上接口获取。
 
-线上体验地址：http://120.79.199.221:3000/analyses/test （第一次访问可能有点慢，因为后台在做模拟登录）
+线上体验地址：http://aris.justcodeit.cn/my_test/analyses/test （第一次访问可能有点慢，因为后台在做模拟登录）
 
 ## 技术栈
 + next.js
@@ -15,3 +15,4 @@
 3. `pnpm i`安装依赖
 4. `pnpm dev`启动开发环境
 5. `pnpm start:loginServer`启动模拟登录服务
+6. 访问http://localhost:3000/${项目名}/analyses/${分析名}

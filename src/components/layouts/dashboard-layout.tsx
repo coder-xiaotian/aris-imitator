@@ -23,6 +23,7 @@ export const DashBoardContext = createContext<{
 export default (page: ReactElement) => {
   useEffect(() => {
     notification.info({
+      duration: null,
       message: "信息",
       description: "第一次访问会有点慢，因为后台在做模拟登录，请耐心等待。",
       key: "info",
