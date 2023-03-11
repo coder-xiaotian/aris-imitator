@@ -25,7 +25,7 @@ instance.interceptors.response.use((res) => {
   console.error("请求错误，url：", error.request.path, "，状态码：", error.response.status)
 
   if (error.response?.status === 401) {
-    const {accessToken, csrfToken} = (await axios.get("http://localhost:8000/login")).data
+    const {accessToken, csrfToken} = (await axios.get(process.env.loginServer!)).data
     process.env.accessToken = accessToken
     process.env.csrfToken = csrfToken
     const {method, path, host, protocol} = error.request
