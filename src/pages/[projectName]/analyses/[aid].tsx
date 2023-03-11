@@ -38,7 +38,6 @@ const DashBoard = () => {
   const {isEditMode, metaData, openAddCom, closeAddCom, filterList, setFilterList, setConfigingFilterId, configingFilterId} = useContext(DashBoardContext)
   const router = useRouter()
   const {projectName, aid, tab} = router.query
-  console.log(projectName)
   const {data: dashboardData, mutate: setDashboardData, loading} = useRequest(async () => {
     const res = await request.get<any, DashBoardInfo>(`/api/projects/${projectName}/analyses/${aid}/tabs/${tab}?locale=zh-CN&apiTag=22A0`)
     res.content = JSON.parse(res.content as any)

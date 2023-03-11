@@ -1,8 +1,8 @@
-import {Button, Spin, Switch, Typography} from "antd";
+import {Button, notification, Space, Spin, Switch, Typography} from "antd";
 import {useRequest} from "ahooks";
 import {AnalysisTabInfo, FilterInfo} from "../../apis/typing";
 import request from "@/utils/client-request";
-import {createContext, Dispatch, ReactElement, SetStateAction, useEffect, useMemo, useState} from "react";
+import {createContext, Dispatch, ReactElement, SetStateAction, useEffect, useState} from "react";
 import {useRouter} from "next/router";
 import classNames from "classnames";
 import {MetaData} from "../../apis/metaInfo";
@@ -21,11 +21,31 @@ export const DashBoardContext = createContext<{
   setConfigingFilterId: Dispatch<SetStateAction<string|undefined>>
 }>({} as any)
 export default (page: ReactElement) => {
+  useEffect(() => {
+    notification.info({
+      message: "信息",
+      description: "第一次访问会有点慢，因为后台在做模拟登录，请耐心等待。",
+      key: "info",
+      btn: (
+        <Space>
+          <Button type="primary" size="small" onClick={() => notification.close("info")}>
+            知道了
+          </Button>
+        </Space>
+      )
+    })
+
+    return () => {
+      console.log("un")
+    }
+  }, [])
+
   const router = useRouter()
   const {projectName, aid, tab} = router.query
   const {data: tabs, loading: loadingTabs} = useRequest<AnalysisTabInfo[], []>(() => request.get(`/api/projects/${projectName}/analyses/${aid}/tabs`), {
     ready: Boolean(aid),
     onSuccess(data) {
+      if (tab) return
       router.push(`/${projectName}/analyses/${aid}?tab=${data?.[0].tabKey}`)
     }
   })
