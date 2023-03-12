@@ -80,6 +80,13 @@ export default (page: ReactElement) => {
     configingFilterId,
     setConfigingFilterId
   }
+  function handleFilterDisplay(item: FilterInfo) {
+    if (item.type === "RangeFilter") {
+      return `>= ${item.from?.value} ` + (item.to ? `< ${item.to?.value}` : "")
+    } else {
+      return item.values?.join(",")
+    }
+  }
 
   return (
     <Spin wrapperClassName='[&_.ant-spin-container]:flex [&_.ant-spin-container]:flex-col
@@ -87,48 +94,51 @@ export default (page: ReactElement) => {
           spinning={loadingTabs || loadingMetaData}>
       <div className='shrink-0 flex justify-between relative z-10 bg-white w-full h-12 shadow'>
         <ScrollPage>
-          {filterList.map((item, i) => (
-            <div key={i} className="inline-flex justify-between items-center h-full border-l border-l-slate-200 hover:bg-slate-50">
-              <div className="grow flex flex-col justify-center h-full px-2 max-w-[280px]">
-                <span className="font-medium">{item.fieldName}</span>
-                <div className="inline-block">
-                  <Typography.Text className="text-xs text-gray-500"
-                                   ellipsis={{tooltip: {color: "#fff", overlayInnerStyle: {color: "#000"}, title: item.values.join(",")}}}
-                  >{item.values.join(",")}</Typography.Text>
-                </div>
-              </div>
-              {item.isTemp ? (
-                <div className="flex items-center relative h-full">
-                  <span className="absolute left-0 border-t-[7px] border-t-transparent border-l-[8px] border-l-white border-b-[7px] border-b-transparent" />
-                  <div className="cursor-pointer inline-flex justify-center items-center w-8 h-full bg-green-500 hover:bg-green-600"
-                       onClick={() => {
-                         setFilterList(draft => {draft[i].isTemp = false})
-                         setConfigingFilterId(undefined)
-                       }}
-                  >
-                    <CheckOutlined className="!text-white"/>
+          {filterList.map((item, i) => {
+            const displayValue = handleFilterDisplay(item)
+            return (
+              <div key={i} className="inline-flex justify-between items-center h-full border-l border-l-slate-200 hover:bg-slate-50">
+                <div className="grow flex flex-col justify-center h-full px-2 max-w-[280px]">
+                  <span className="font-medium">{item.fieldName}</span>
+                  <div className="inline-block">
+                    <Typography.Text className="text-xs text-gray-500"
+                                     ellipsis={{tooltip: {color: "#fff", overlayInnerStyle: {color: "#000"}, title: displayValue}}}
+                    >{displayValue}</Typography.Text>
                   </div>
-                  <div className="cursor-pointer inline-flex justify-center items-center w-8 h-full bg-red-500 hover:bg-red-600"
-                       onClick={() => setFilterList(draft => {
-                         const [item] = draft.splice(i, 1)
-                         if (draft.findIndex(o => o.compId === item.compId && o.isTemp) === -1) { // filterList已经没有改组件的临时过滤器了
+                </div>
+                {item.isTemp ? (
+                  <div className="flex items-center relative h-full">
+                    <span className="absolute left-0 border-t-[7px] border-t-transparent border-l-[8px] border-l-white border-b-[7px] border-b-transparent" />
+                    <div className="cursor-pointer inline-flex justify-center items-center w-8 h-full bg-green-500 hover:bg-green-600"
+                         onClick={() => {
+                           setFilterList(draft => {draft[i].isTemp = false})
                            setConfigingFilterId(undefined)
-                         }
-                       })}
-                  >
-                    <CloseOutlined className="!text-white"/>
+                         }}
+                    >
+                      <CheckOutlined className="!text-white"/>
+                    </div>
+                    <div className="cursor-pointer inline-flex justify-center items-center w-8 h-full bg-red-500 hover:bg-red-600"
+                         onClick={() => setFilterList(draft => {
+                           const [item] = draft.splice(i, 1)
+                           if (draft.findIndex(o => o.compId === item.compId && o.isTemp) === -1) { // filterList已经没有改组件的临时过滤器了
+                             setConfigingFilterId(undefined)
+                           }
+                         })}
+                    >
+                      <CloseOutlined className="!text-white"/>
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <Button type="text"
-                        size="small"
-                        className="mr-1"
-                        icon={<CloseOutlined className="!text-gray-600"/>}
-                        onClick={() => setFilterList(draft => {draft.splice(i, 1)})}
-                />
-              )}
-            </div>
-          ))}
+                ) : (
+                  <Button type="text"
+                          size="small"
+                          className="mr-1"
+                          icon={<CloseOutlined className="!text-gray-600"/>}
+                          onClick={() => setFilterList(draft => {draft.splice(i, 1)})}
+                  />
+                )}
+              </div>
+            )
+          })}
         </ScrollPage>
         <div>
           <div className='inline-flex flex-col justify-center items-center h-full px-2 border-x border-x-slate-200'>

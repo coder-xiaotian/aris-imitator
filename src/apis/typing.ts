@@ -148,8 +148,16 @@ export type FilterInfo = {
   compId: string
   field: string
   fieldName?: string
-  type: "ValueFilter"
-  values: (string | null)[]
+  type: "ValueFilter" | "RangeFilter"
+  values?: (string | null)[]
+  from?: {
+    value: string
+    include: boolean
+  }
+  to?: {
+    value: string
+    include: boolean
+  }
 }
 export type ComponentRequestInfo = {
   "selections": {

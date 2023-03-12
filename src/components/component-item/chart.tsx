@@ -4,7 +4,7 @@ import abbreviate from 'number-abbreviate'
 import * as echarts from 'echarts'
 import type {CustomSeriesOption, SeriesOption} from 'echarts'
 import {forwardRef, useEffect, useImperativeHandle, useRef, useState} from "react";
-import {ChartDataResponse, ChartType, ComponentConfig} from "../../apis/typing";
+import {ChartDataResponse, ChartType, ComponentConfig, FilterInfo} from "../../apis/typing";
 import colors from "tailwindcss/colors";
 import {getColData} from "@/components/component-config-drawer/utils";
 import {XAXisOption, YAXisOption} from "echarts/types/dist/shared";
@@ -20,7 +20,7 @@ const CHART_TYPE_MAP = {
   [ChartType.GRID]: 'line' as const,
   [ChartType.SINGLE_KPI]: 'line' as const,
 }
-export type SelectFilterHandler = (keys: string[], names: string[], values: string[]) => void
+export type SelectFilterHandler = (filterInfos: FilterInfo[]) => void
 type ChartProps = {
   chartType: `${ChartType}`,
   isInverted: boolean,
@@ -234,7 +234,57 @@ export default forwardRef(({aliasMap, metaData, data, chartType, onSelect, isInv
       ins.setOption({
         series: calcBrushOption(startIndex, startIndex),
       })
-      onSelect(ecModel.option.meta.xKeys, ecModel.option.meta.xNames, [dAxis.getCategories()[startIndex]])
+
+      handleSelectFilter(ecModel.option.meta.xKeys, ecModel.option.meta.xNames, [dAxis.getCategories()[startIndex]])
+    }
+    function handleSelectFilter(keys: string[], names: string[], values: string[]) {
+      const filterObjs = keys.map((k, i) => {
+        let ret: FilterInfo = {
+          isTemp: true,
+          compId: componentConfig.requestState.id,
+          type: "ValueFilter",
+          field: k,
+          fieldName: names[i],
+        }
+        if (componentConfig.type === ChartType.DIST) {
+          const vFirst = values[0], vLast = values[values.length - 1]
+          if (vFirst.includes(">=")) {
+            ret = {
+              ...ret,
+              type: "RangeFilter",
+              from: {
+                value: vFirst.split(">=")[1],
+                include: true
+              }
+            }
+          } else {
+            ret = {
+              ...ret,
+              type: "RangeFilter",
+              from: {
+                value: vFirst.split("-")[0],
+                include: true
+              },
+              to: vLast.includes(">=") ? undefined : {
+                value: vLast.split("-")[1],
+                include: false
+              }
+            }
+          }
+        } else {
+          ret = {
+            ...ret,
+            values: values.map(v => {
+              const res = v.split("-")[i]
+              return res === "null" ? null : res
+            })
+          }
+        }
+
+        return ret
+      })
+
+      onSelect(filterObjs)
     }
     function handleMouseOver({event}: any) {
       const canvas = event?.event.target as HTMLCanvasElement
@@ -311,7 +361,7 @@ export default forwardRef(({aliasMap, metaData, data, chartType, onSelect, isInv
             values.push(categories[i])
           }
         }
-        onSelect(ecModel.option.meta.xKeys, ecModel.option.meta.xNames, values)
+        handleSelectFilter(ecModel.option.meta.xKeys, ecModel.option.meta.xNames, values)
       }
       document.addEventListener("mousemove", handleMousemove)
       document.addEventListener("mouseup", () => {
@@ -325,7 +375,7 @@ export default forwardRef(({aliasMap, metaData, data, chartType, onSelect, isInv
       // @ts-ignore
       const ecModel = ins.getModel()
       const selectedMap = ecModel.getSeriesByIndex(0).option.selectedMap
-      onSelect(ecModel.option.meta.xKeys, ecModel.option.meta.xNames, Object.keys(selectedMap).reduce((res, key) => {
+      handleSelectFilter(ecModel.option.meta.xKeys, ecModel.option.meta.xNames, Object.keys(selectedMap).reduce((res, key) => {
         if (selectedMap[key]) {
           res.push(key)
         }

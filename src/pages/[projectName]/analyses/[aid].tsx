@@ -1,7 +1,7 @@
 import {useContext, useEffect, useRef, useState} from "react";
 // @ts-ignore
 import ReactGridLayout, {Layout, utils as ReactGridLayoutUtils} from "react-grid-layout";
-import {AliasMapping, ChartType, ComponentConfig, DashBoardInfo} from "../../../apis/typing";
+import {AliasMapping, ChartType, ComponentConfig, DashBoardInfo, FilterInfo} from "../../../apis/typing";
 import GridItem from "@/components/grid-item";
 import 'react-grid-layout/css/styles.css'
 import {useDebounceFn, useRequest} from "ahooks";
@@ -168,7 +168,7 @@ const DashBoard = () => {
     setConfigingIndex(NaN)
   }
 
-  const handleSelectFilter = (compId: string, keys: string[], names: string[], values: string[]) => {
+  const handleSelectFilter = (compId: string, filterInfos: FilterInfo[]) => {
     setFilterList(draft => {
       let replaceIndexs: number[] = []
       for (let i = 0; i < draft.length; i++) {
@@ -180,33 +180,14 @@ const DashBoard = () => {
         }
       }
 
-      keys.forEach((k, i) => {
+
+      filterInfos.forEach((v, i) => {
         if (i >= replaceIndexs.length) {
-          draft.push({
-            isTemp: true,
-            compId,
-            type: "ValueFilter",
-            field: k,
-            fieldName: names[i],
-            values: values.map(v => {
-              const res = v.split("-")[i]
-              return res === "null" ? null : res
-            })
-          })
-        } else if (values.length === 0) {
+          draft.push(v)
+        } else if (filterInfos.length === 0) {
           draft.splice(replaceIndexs[i], 1)
         } else {
-          draft.splice(replaceIndexs[i], 1, {
-            isTemp: true,
-            compId,
-            type: "ValueFilter",
-            field: k,
-            fieldName: names[i],
-            values: values.map(v => {
-              const res = v.split("-")[i]
-              return res === "null" ? null : res
-            })
-          })
+          draft.splice(replaceIndexs[i], 1, v)
         }
       })
     })
@@ -262,7 +243,7 @@ const DashBoard = () => {
                                aliasMap={aliasMap}
                                metaData={metaData!}
                                addingFilter={addingFilter}
-                               onSelectFilter={(keys, names, values) => handleSelectFilter(chart.config.requestState.id, keys, names, values)}
+                               onSelectFilter={(values) => handleSelectFilter(chart.config.requestState.id, values)}
                                filterList={addingFilter ? emptyListRef.current : filterList}
                 />
               </GridItem>
