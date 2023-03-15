@@ -30,7 +30,8 @@ type ComponentItemProps = {
 }
 export default memo(({componentConfig, aliasMap, metaData, addingFilter, filterList, onSelectFilter}: ComponentItemProps) => {
   const router = useRouter()
-  const {projectName} = router.query
+  const {projectKey, aid} = router.query
+  console.log(router.query, aid)
   // 获取图表的数据
   const {data, loading, error, run: requstData} = useRequest((fList = []) => {
     function handleMeasureParams() {
@@ -50,7 +51,7 @@ export default memo(({componentConfig, aliasMap, metaData, addingFilter, filterL
         }
       }) ?? []
     }
-    return request.post<any, ChartDataResponse, ComponentRequestInfo>(`/api/dataSets/${projectName}/query/simple`,
+    return request.post<any, ChartDataResponse, ComponentRequestInfo>(`/api/dataSets/${aid}/query/simple`,
       {
         considerDistinct: false,
         includeNullValues: componentConfig.requestState.includeNullValues,

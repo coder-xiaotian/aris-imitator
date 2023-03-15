@@ -15,4 +15,4 @@
 3. `pnpm i`安装依赖
 4. `pnpm dev`启动开发环境
 5. `pnpm start:loginServer`启动模拟登录服务
-6. 访问http://localhost:3000/${项目名}/analyses/${分析名}
+6. 访问http://localhost:3000/${projectKey}/analyses/${analysisKey}，`projectKey`、`analysisKey`分别在/mining/api/int/tenants/租户名/projects/，/api/int/tenants/租户名/projects/项目key/analyses接口响应中获取。

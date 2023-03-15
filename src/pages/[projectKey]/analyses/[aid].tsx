@@ -37,9 +37,9 @@ const DashBoard = () => {
   // 是否编辑模式
   const {isEditMode, metaData, openAddCom, closeAddCom, filterList, setFilterList, setConfigingFilterId, configingFilterId} = useContext(DashBoardContext)
   const router = useRouter()
-  const {projectName, aid, tab} = router.query
+  const {projectKey, aid, tab} = router.query
   const {data: dashboardData, mutate: setDashboardData, loading} = useRequest(async () => {
-    const res = await request.get<any, DashBoardInfo>(`/api/projects/${projectName}/analyses/${aid}/tabs/${tab}?locale=zh-CN&apiTag=22A0`)
+    const res = await request.get<any, DashBoardInfo>(`/api/projects/${projectKey}/analyses/${aid}/tabs/${tab}?locale=zh-CN&apiTag=22A0`)
     res.content = JSON.parse(res.content as any)
     return res
   }, {
@@ -48,7 +48,7 @@ const DashBoard = () => {
   })
   const {run: updateDashboardDataReq} = useDebounceFn(async (dbData: DashBoardInfo) => {
     dbData.content = JSON.stringify(dbData.content) as any
-    const res = await request.put<any, DashBoardInfo>(`/api/projects/${projectName}/analyses/${aid}/tabs/${tab}?locale=zh-CN&apiTag=22A0`, dbData)
+    const res = await request.put<any, DashBoardInfo>(`/api/projects/${projectKey}/analyses/${aid}/tabs/${tab}?locale=zh-CN&apiTag=22A0`, dbData)
     res.content = JSON.parse(res.content as any)
     setDashboardData(res)
   }, {wait: 500})

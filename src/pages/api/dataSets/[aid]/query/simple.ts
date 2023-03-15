@@ -11,9 +11,9 @@ export default async function handler(
   res: NextApiResponse<Data>
 ) {
   try {
-    const {aid, tab} = req.query
+    const {aid} = req.query
     if (req.method === 'POST') {
-      const r = await request.post(`https://processmining.ariscloud.com/mining/api/int/tenants/${process.env.tenantName}/dataSets/${req.query.pid}/query/simple?locale=zh-CN&apiTag=22A0`, req.body)
+      const r = await request.post(`https://processmining.ariscloud.com/mining/api/int/tenants/${process.env.tenantName}/dataSets/${aid}/query/simple?locale=zh-CN&apiTag=22A0`, req.body)
       res.status(200).json(r.data)
     }
   } catch (e) {
