@@ -95,6 +95,15 @@ export type ComponentConfig<CT = `${ChartType}`> = {
     showVerticalLines: boolean
     subtitle: string
   }
+  processExplorer?: {
+    compactMode: boolean
+    displayedPanel: "PROCESS" | ""
+    measureDisplayConfig: {
+      type: "FREQUENCY"
+      usedAlias: "CASE_COUNT"
+    }
+    showAbbreviateValues: boolean
+  }
 }
 
 export type Chart = {
@@ -190,4 +199,46 @@ export type ChartDataResponse<T = string[] | [{from: string, to?: string}, strin
   headers: string[]
   rows: T[]
   status: "Success"
+}
+
+export type QuotaFieldType = {
+  "CASE_COUNT": "pnum",
+  "ACTIVITY_COUNT": "fnum",
+  "CONNECTION_COUNT": "cnum",
+  "FROM_COUNT": "startnum",
+  "TO_COUNT": "endnum",
+  "ACTIVITY": "activity_name",
+  "TO_NAME": "to_name",
+  "FROM_NAME": "from_name",
+  "OCCURRENCE_ACTIVITY": "a_occurrence",
+  "OCCURRENCE_CONNECTION": "c_occurrence",
+  "THROUGHPUT_ACTIVITY": "a_processing_time",
+  "THROUGHPUT_PROCESS": "p_cycle_time",
+  "THROUGHPUT_CONNECTION": "c_cycle_time",
+  "VARIANT": "variant_id"
+}
+
+export type AggFunType = {
+  "SUM": "sum",
+  "AVG": "avg",
+  "MAX": "max",
+  "MIN": "min",
+  "COUNT": "count",
+  "STDDEV": "stddev",
+  "MEDIAN": "median",
+  "NO_AGG": "noAgg",
+  "COUNT_DISTINCT": "countDistinct",
+  "RATIO": "ratio"
+}
+
+export type ProjectInfo = {
+  abbr: string
+  color: string
+  dataSetId: string
+  name: string
+  projectKey: string
+  version: {
+    primaryTerm: number
+    sequenceNumber: number
+  }
 }

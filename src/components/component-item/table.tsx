@@ -1,17 +1,22 @@
-import {AliasMapping, ChartDataResponse, ComponentConfig} from "../../apis/typing";
+import {AliasMapping, ComponentConfig, FilterInfo} from "../../apis/typing";
 import {FixedSizeList} from "react-window"
 import {useEffect, useRef, useState} from "react";
 import {ArrowDownOutlined, ArrowUpOutlined} from "@ant-design/icons";
 import {MetaData} from "../../apis/metaInfo";
 import {getColData} from "@/components/component-config-drawer/utils";
+import {useChartData} from "@/components/component-item/hooks";
+import Wrapper from "@/components/component-item/wrapper";
 
 type TableProps = {
-  data: ChartDataResponse<(string|number)[]> | undefined
   aliasMap: AliasMapping
   metaData: MetaData
   componentConfig: ComponentConfig
+  filterList: FilterInfo[]
+  addingFilter: boolean
 }
-export default ({data, componentConfig, metaData, aliasMap}: TableProps) => {
+export default ({filterList, addingFilter, componentConfig, metaData, aliasMap}: TableProps) => {
+  const {data, loading, error} = useChartData<(string|number)[]>({filterList, addingFilter, componentConfig, aliasMap, metaData})
+
   const listRef = useRef<HTMLDivElement>(null)
   const [listHeight, setListHeight] = useState(0)
   useEffect(() => {
@@ -115,26 +120,28 @@ export default ({data, componentConfig, metaData, aliasMap}: TableProps) => {
     }
   }
   return (
-    <div className="flex-grow flex flex-col">
-      <div style={{display: "grid", gridTemplateColumns: getGridTemplateColumns()}}
-           className="border-y border-y-slate-200"
-      >
-        {data?.headers?.map(h => renderHeader(h))}
+    <Wrapper loading={loading} error={error}>
+      <div className="flex-grow flex flex-col">
+        <div style={{display: "grid", gridTemplateColumns: getGridTemplateColumns()}}
+             className="border-y border-y-slate-200"
+        >
+          {data?.headers?.map(h => renderHeader(h))}
+        </div>
+        <FixedSizeList className="flex-grow overflow-auto !h-0"
+                       outerRef={listRef}
+                       itemCount={dataRows.length}
+                       width="100%" height={listHeight} itemSize={30}>
+          {({index: i, style}) => {
+            const row = dataRows[i]
+            return (
+              <div key={i} style={{display: "grid", gridTemplateColumns: `repeat(${row?.length}, 1fr)`, ...style}}>
+                {row.map((item, j) =>
+                  <span key={i + j} className="px-2 py-1 truncate" title={item as string}>{item as string}</span>)}
+              </div>
+            )
+          }}
+        </FixedSizeList>
       </div>
-      <FixedSizeList className="flex-grow overflow-auto !h-0"
-                     outerRef={listRef}
-                     itemCount={dataRows.length}
-                     width="100%" height={listHeight} itemSize={30}>
-        {({index: i, style}) => {
-          const row = dataRows[i]
-          return (
-            <div key={i} style={{display: "grid", gridTemplateColumns: `repeat(${row?.length}, 1fr)`, ...style}}>
-              {row.map((item, j) =>
-                <span key={i + j} className="px-2 py-1 truncate" title={item as string}>{item as string}</span>)}
-            </div>
-          )
-        }}
-      </FixedSizeList>
-    </div>
+    </Wrapper>
   )
 }

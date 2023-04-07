@@ -1,14 +1,15 @@
-import type {EChartsOption, EChartsType, ElementEvent} from "echarts";
+import type {CustomSeriesOption, EChartsOption, EChartsType, ElementEvent, SeriesOption} from "echarts";
+import * as echarts from 'echarts'
 // @ts-ignore
 import abbreviate from 'number-abbreviate'
-import * as echarts from 'echarts'
-import type {CustomSeriesOption, SeriesOption} from 'echarts'
 import {forwardRef, useEffect, useImperativeHandle, useRef, useState} from "react";
-import {ChartDataResponse, ChartType, ComponentConfig, FilterInfo} from "../../apis/typing";
+import {ChartType, ComponentConfig, FilterInfo} from "../../apis/typing";
 import colors from "tailwindcss/colors";
 import {getColData} from "@/components/component-config-drawer/utils";
 import {XAXisOption, YAXisOption} from "echarts/types/dist/shared";
 import {OptionEncode} from "echarts/types/src/util/types";
+import {useChartData} from "@/components/component-item/hooks";
+import Wrapper from "@/components/component-item/wrapper";
 
 const CHART_TYPE_MAP = {
   [ChartType.BAR]: 'bar' as const,
@@ -25,12 +26,15 @@ type ChartProps = {
   chartType: `${ChartType}`,
   isInverted: boolean,
   onSelect: SelectFilterHandler,
-  data: ChartDataResponse | undefined,
   componentConfig: ComponentConfig,
   aliasMap: any,
   metaData: any,
+  filterList: FilterInfo[]
+  addingFilter: boolean
 }
-export default forwardRef(({aliasMap, metaData, data, chartType, onSelect, isInverted, componentConfig}: ChartProps, ref) => {
+export default forwardRef(({filterList, addingFilter, aliasMap, metaData, chartType, onSelect, isInverted, componentConfig}: ChartProps, ref) => {
+  const {data, loading, error} = useChartData({filterList, addingFilter, componentConfig, aliasMap, metaData})
+
   const containerRef = useRef<HTMLDivElement>(null)
   const echartsInsRef = useRef<EChartsType>()
   useEffect(() => {
@@ -553,6 +557,8 @@ export default forwardRef(({aliasMap, metaData, data, chartType, onSelect, isInv
   }))
 
   return (
-    <div ref={containerRef} className='w-full h-full' />
+    <Wrapper loading={loading} error={error}>
+      <div ref={containerRef} className='w-full h-full' />
+    </Wrapper>
   )
 })

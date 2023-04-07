@@ -1,6 +1,6 @@
 import {Button, notification, Space, Spin, Switch, Typography} from "antd";
 import {useRequest} from "ahooks";
-import {AnalysisTabInfo, FilterInfo} from "../../apis/typing";
+import {AnalysisTabInfo, FilterInfo, ProjectInfo} from "../../apis/typing";
 import request from "@/utils/client-request";
 import {createContext, Dispatch, ReactElement, SetStateAction, useEffect, useState} from "react";
 import {useRouter} from "next/router";
@@ -19,6 +19,8 @@ export const DashBoardContext = createContext<{
   setFilterList: Updater<FilterInfo[]>
   configingFilterId: string | undefined
   setConfigingFilterId: Dispatch<SetStateAction<string|undefined>>
+  datasetId: string | undefined,
+  projectKey: string | undefined,
 }>({} as any)
 export default (page: ReactElement) => {
   useEffect(() => {
@@ -43,15 +45,20 @@ export default (page: ReactElement) => {
 
   const router = useRouter()
   const {projectKey, aid, tab} = router.query
+  // 请求项目信息
+  const {data: projectInfo} = useRequest<ProjectInfo, any>(() => request.get(`/api/projects/${projectKey}`), {
+    ready: !!projectKey
+  })
+  // 请求tabs数据
   const {data: tabs, loading: loadingTabs} = useRequest<AnalysisTabInfo[], []>(() => request.get(`/api/projects/${projectKey}/analyses/${aid}/tabs`), {
-    ready: Boolean(aid),
+    ready: !!aid && !!projectInfo,
     onSuccess(data) {
       if (tab) return
       router.push(`/${projectKey}/analyses/${aid}?tab=${data?.[0].tabKey}`)
     }
   })
-  const {data: metaData, loading: loadingMetaData} = useRequest<MetaData, []>(() => request.get(`/api/dataSets/${aid}/metaInfo?locale=zh-CN&apiTag=22A0`), {
-    ready: Boolean(aid) && !!tabs
+  const {data: metaData, loading: loadingMetaData} = useRequest<MetaData, []>(() => request.get(`/api/dataSets/${projectInfo?.dataSetId}/metaInfo?locale=zh-CN&apiTag=22A0`), {
+    ready: !!projectInfo && !!tabs
   })
   // 过滤器数据
   const [filterList, setFilterList] = useImmer<FilterInfo[]>([])
@@ -78,7 +85,9 @@ export default (page: ReactElement) => {
     filterList,
     setFilterList,
     configingFilterId,
-    setConfigingFilterId
+    setConfigingFilterId,
+    datasetId: projectInfo?.dataSetId,
+    projectKey: projectInfo?.projectKey
   }
   function handleFilterDisplay(item: FilterInfo) {
     if (item.type === "RangeFilter") {
