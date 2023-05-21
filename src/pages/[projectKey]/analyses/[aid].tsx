@@ -39,7 +39,7 @@ const DashBoard = () => {
   const router = useRouter()
   const {projectKey, aid, tab} = router.query
   const {data: dashboardData, mutate: setDashboardData, loading} = useRequest(async () => {
-    const res = await request.get<any, DashBoardInfo>(`/api/projects/${projectKey}/analyses/${aid}/tabs/${tab}?locale=zh-CN&apiTag=22A0`)
+    const res = await request.get<any, DashBoardInfo>(`/api/projects/${projectKey}/analyses/${aid}/tabs/${tab}?locale=zh-CN&apiTag=2340`)
     res.content = JSON.parse(res.content as any)
     return res
   }, {
@@ -48,7 +48,7 @@ const DashBoard = () => {
   })
   const {run: updateDashboardDataReq} = useDebounceFn(async (dbData: DashBoardInfo) => {
     dbData.content = JSON.stringify(dbData.content) as any
-    const res = await request.put<any, DashBoardInfo>(`/api/projects/${projectKey}/analyses/${aid}/tabs/${tab}?locale=zh-CN&apiTag=22A0`, dbData)
+    const res = await request.put<any, DashBoardInfo>(`/api/projects/${projectKey}/analyses/${aid}/tabs/${tab}?locale=zh-CN&apiTag=2340`, dbData)
     res.content = JSON.parse(res.content as any)
     setDashboardData(res)
   }, {wait: 500})

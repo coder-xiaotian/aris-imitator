@@ -9,7 +9,7 @@ export default async function handler(
   try {
     const {datasetId} = req.query
     if (req.method === 'POST') {
-      const r = await request.post(`https://processmining.ariscloud.com/mining/api/int/tenants/${process.env.tenantName}/dataSets/${datasetId}/query/processExplorer?locale=zh-CN&apiTag=22A0`, req.body)
+      const r = await request.post(`https://processmining.ariscloud.com/mining/api/int/tenants/${process.env.tenantName}/dataSets/${datasetId}/query/processExplorer?locale=zh-CN&apiTag=2340`, req.body)
       res.status(200).json(r.data)
     }
   } catch (e) {

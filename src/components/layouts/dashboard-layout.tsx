@@ -57,7 +57,7 @@ export default (page: ReactElement) => {
       router.push(`/${projectKey}/analyses/${aid}?tab=${data?.[0].tabKey}`)
     }
   })
-  const {data: metaData, loading: loadingMetaData} = useRequest<MetaData, []>(() => request.get(`/api/dataSets/${projectInfo?.dataSetId}/metaInfo?locale=zh-CN&apiTag=22A0`), {
+  const {data: metaData, loading: loadingMetaData} = useRequest<MetaData, []>(() => request.get(`/api/dataSets/${projectInfo?.dataSetId}/metaInfo?locale=zh-CN&apiTag=2340`), {
     ready: !!projectInfo && !!tabs
   })
   // 过滤器数据
