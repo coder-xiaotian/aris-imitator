@@ -35,16 +35,16 @@ export default ({filterList, addingFilter, metaData, aliasMap, componentConfig}:
   const [edges, setEdges] = useState([])
 
   const [isVariety, setIsVariety] = useState(false)
-  const [isCompact, setIsCompact] = useState(true)
 
   return (
     <Wrapper loading={loading}>
       <svg>
         <g>
+          {/* @ts-ignore */}
           {nodes.map(n => <Node key={n.label} label={n.label} data={n}/>)}
         </g>
       </svg>
-      <SettingDrawser isCompact={isCompact} isVariety={isVariety}/>
+      <SettingDrawser isVariety={isVariety}/>
     </Wrapper>
   )
 }
@@ -58,9 +58,11 @@ function Node({data: {x, y, label}}: NodeProps) {
   )
 }
 
+// @ts-ignore
 function generateDotStr(nodes, edges) {
   return `digraph G {
     ${nodes
+     // @ts-ignore
     .map((n) => {
       if (n.id === "StartNode") return "start [shape=circle]";
       else if (n.id === "EndNode") return "end [shape=circle]";
