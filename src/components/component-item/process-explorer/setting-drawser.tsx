@@ -1,10 +1,10 @@
 import {Button, Space, Tooltip} from "antd";
 import {
-  ApartmentOutlined,
+  ApartmentOutlined, ArrowDownOutlined,
   ControlOutlined,
   FieldBinaryOutlined,
   MenuFoldOutlined,
-  MenuUnfoldOutlined
+  MenuUnfoldOutlined, MinusOutlined, PlusOutlined
 } from "@ant-design/icons";
 import {useState} from "react";
 
@@ -26,20 +26,18 @@ export default ({isVariety}: SettingDrawserProps) => {
               <Button type="text" className="!text-slate-500 !border !border-slate-400" icon={<FieldBinaryOutlined className="text-sky-500" />}/>
             </Tooltip>
             <SliderItem/>
-            <SliderItem/>
+            <SliderItem type="connect"/>
             <Space direction="vertical">
-              <Tooltip placement="left" title="显示流程面板">
-                <Button type="text" className="!text-slate-500 hover:!text-sky-500" icon={<ControlOutlined />}/>
-              </Tooltip>
-              <Tooltip placement="left" title="显示变种面板">
-                <Button type="text" className="!text-slate-500 hover:!text-sky-500" icon={<ApartmentOutlined />}/>
-              </Tooltip>
-              <Tooltip placement="left" title="切换到完整视图">
-                <Button type="text" className="!text-slate-500 hover:!text-sky-500"
-                        icon={<MenuFoldOutlined />}
-                        onClick={toggleView}
-                />
-              </Tooltip>
+              <TooltipButton placement="left" title="显示流程面板"
+                             icon={<ControlOutlined />}
+              />
+              <TooltipButton placement="left" title="显示变种面板"
+                             icon={<ApartmentOutlined />}
+              />
+              <TooltipButton placement="left" title="切换到完整视图"
+                             icon={<MenuFoldOutlined />}
+                             onClick={toggleView}
+              />
             </Space>
           </div>
         ) : (
@@ -47,19 +45,10 @@ export default ({isVariety}: SettingDrawserProps) => {
             <h2 className="px-2 text-xl">流程</h2>
             <div>middle</div>
             <div className="flex justify-between px-2">
-              <Tooltip title="切换到紧凑视图">
-                <Button type="text" className="!text-slate-500 hover:!text-sky-500"
-                        icon={<MenuUnfoldOutlined />}
-                        onClick={toggleView}
-                />
-              </Tooltip>
+              <TooltipButton title="切换到紧凑视图" icon={<MenuUnfoldOutlined />} onClick={toggleView}/>
               <div>
-                <Tooltip title="显示流程面板">
-                  <Button type="text" className="!text-slate-500 hover:!text-sky-500" icon={<ControlOutlined />}/>
-                </Tooltip>
-                <Tooltip title="显示变种面板">
-                  <Button type="text" className="!text-slate-500 hover:!text-sky-500" icon={<ApartmentOutlined />}/>
-                </Tooltip>
+                <TooltipButton title="显示流程面板" icon={<ControlOutlined />}/>
+                <TooltipButton title="显示变种面板" icon={<ApartmentOutlined />}/>
               </div>
             </div>
           </div>
@@ -69,6 +58,23 @@ export default ({isVariety}: SettingDrawserProps) => {
   )
 }
 
-function SliderItem() {
-  return <div>slider</div>
+function TooltipButton({placement, title, icon, onClick = () => {}}: any) {
+  return (
+    <Tooltip placement={placement} title={title}>
+      <Button type="text" className="!text-slate-500 hover:!text-sky-500" icon={icon} onClick={onClick}/>
+    </Tooltip>
+  )
+}
+
+function SliderItem({type="activity"}) {
+  return (
+    <div className="flex flex-col items-center justify-between">
+      {type === "activity" ? <span className="inline-block w-4 h-4 rounded-full border border-sky-500" /> : <ArrowDownOutlined className="!text-sky-500 text-lg" />}
+      <div>bar</div>
+      <Button.Group className="mt-2" size="small">
+        <Button icon={<MinusOutlined />}/>
+        <Button icon={<PlusOutlined />}/>
+      </Button.Group>
+    </div>
+  )
 }
