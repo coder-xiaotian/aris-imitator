@@ -12,25 +12,10 @@ type ProcessExplorerProps = {
   addingFilter: boolean
 }
 export default ({filterList, addingFilter, metaData, aliasMap, componentConfig}: ProcessExplorerProps) => {
-  const {data, loading} = useProcessData({filterList, addingFilter, metaData, aliasMap, componentConfig})
+  const {nodeStepList, loading} = useProcessData({filterList, addingFilter, metaData, aliasMap, componentConfig})
 
   const processDataRef = useRef()
-  const nodeMapRef = useRef<{ [key: string]: any }>({})
-  const edgeMapRef = useRef<{ [key: string]: any }>({})
   const nodeStepDataRef = useRef<any>()
-  useEffect(() => {
-    if (!data) return
-
-    const {nodes, edges, commonPath} = data
-    nodeMapRef.current = nodes.reduce((res, item) => {
-      res[item.activity] = item
-      return res
-    }, {} as any)
-    edgeMapRef.current = edges.reduce((res, item) => {
-      res[`${item.from}->${item.to}`] = item
-      return res
-    }, {} as any)
-  }, [data?.nodes, data?.edges, data?.commonPath])
   const [nodes, setNodes] = useState([])
   const [edges, setEdges] = useState([])
 

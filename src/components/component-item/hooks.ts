@@ -107,11 +107,36 @@ export function useChartData<T = ChartDataResponse["rows"][0]>({filterList, addi
     error
   }
 }
+
+const nodeType = {
+  StartEnd: 1,
+  Normal: 2
+}
+const edgeType = {
+  StartEnd: 1,
+  Normal: 2
+}
 export function useProcessData({filterList, addingFilter, componentConfig, aliasMap, metaData}: Props) {
   const {datasetId} = useContext(DashBoardContext)
 
+  const {data: totalCaseData} = useRequest(() => request.post<any, any, any>(`/api/dataSets/${datasetId}/query/simple`, {
+    "selections": [
+      {
+        "type": "Agg",
+        "key": "pnum",
+        "asColumn": "pnum",
+        "aggregation": "sum",
+        "considerDistinct": false
+      }
+    ],
+    "filterList": {
+      "type": "FilterList",
+      "mode": "AND",
+      "filters": []
+    }
+  }))
   // 获取流程图数据
-  const {data, loading, run: requestProcessData} = useRequest((filters = []) => {
+  const {data: nodeStepList, loading, run: requestProcessData} = useRequest((filters = []) => {
     return request.post<any, ProcessData, any>(`/api/dataSets/${datasetId}/query/processExplorer`, {
       withCommonPath: true,
       nodes: {
@@ -174,10 +199,140 @@ export function useProcessData({filterList, addingFilter, componentConfig, alias
       }
     })
       .then(res => {
-        console.log(res)
-        return res
+        const totalCase = totalCaseData.rows[0][0]
+        const resList = []
+        const commonPath = res.commonPath
+        const startEdgeAndEndEdgeList: any = []
+        const startNodeName = "流程开始"
+        const endNodeName = "流程结束"
+        const firstGraph = {
+          nodes: [{
+            type: nodeType.StartEnd,
+            name: startNodeName,
+            measures: {
+              case: totalCase,
+            }
+          }, {
+            type: nodeType.StartEnd,
+            name: endNodeName,
+            measures: {
+              case: totalCase,
+            }
+          }].concat(...commonPath.map(name => {
+            const nodeData = res.nodes.find(item => item.activity === name)!
+            let isStart = true, isEnd = true
+            if (nodeData.measures["startnum#SUM"] === 0) {
+              startEdgeAndEndEdgeList.push({
+                type: edgeType.StartEnd,
+                from: nodeData.activity,
+                to: endNodeName,
+                measures: {
+                  case: nodeData.measures["pnum#SUM"]
+                }
+              })
+              isStart = false
+            }
+            if (nodeData.measures["endnum#SUM"] === 0) {
+              startEdgeAndEndEdgeList.push(nodeData)
+              startEdgeAndEndEdgeList.push({
+                type: edgeType.StartEnd,
+                from: endNodeName,
+                to: nodeData.activity,
+                measures: {
+                  case: nodeData.measures["pnum#SUM"]
+                }
+              })
+              isEnd = false
+            }
+
+            return {
+              type: nodeType.Normal,
+              name,
+              measures: {
+                case: nodeData.measures["pnum#SUM"],
+                isStart,
+                isEnd,
+              }
+            }
+          })),
+          edges: res.edges.filter(edge => {
+            if (commonPath.includes(edge.from) && commonPath.includes(edge.to)) {
+              return true
+            }
+
+            return false
+          }).map(edge => {
+            return {
+              type: edgeType.Normal,
+              from: edge.from,
+              to: edge.to,
+              measures: {
+                case: edge.measures["pnum#SUM"]
+              }
+            }
+          }).concat(...startEdgeAndEndEdgeList)
+        }
+        resList.push(firstGraph)
+
+        const sortedNode = res.nodes
+          .filter(node => !commonPath.includes(node.activity))
+          .sort((a, b) => b.measures["pnum#SUM"] - a.measures["pnum#SUM"])
+        let pushGraph: any, prevNode: typeof sortedNode[0], prevGraph = firstGraph
+        sortedNode.forEach(node => {
+          if (prevNode?.measures["pnum#SUM"] === node.measures["pnum#SUM"]) {
+            pushGraph = prevGraph
+          } else {
+            pushGraph = {}
+            resList.push(pushGraph)
+          }
+
+          pushGraph.nodes = [...prevGraph.nodes, {
+            type: nodeType.Normal,
+            name: node.activity,
+            measures: {
+              case: node.measures["pnum#SUM"],
+            }
+          }]
+          pushGraph.edges = [...prevGraph.edges, ...res.edges.filter(edge => {
+            const inPrevEdges = prevGraph.edges.find(item => item.from === edge.from && item.to === edge.to)
+            const inPrevNodes = pushGraph.nodes.find((item: any) => item.name === edge.from)
+              && pushGraph.nodes.find((item: any) => item.name === edge.to)
+            return !inPrevEdges && inPrevNodes
+          }).map(edge => ({
+            type: edgeType.Normal,
+            from: edge.from,
+            to: edge.to,
+            measures: {
+              case: edge.measures["pnum#SUM"]
+            }
+          }))]
+          if (node.measures["startnum#SUM"] === 0) {
+            pushGraph.edges.push({
+              type: edgeType.Normal,
+              from: node.activity,
+              to: endNodeName,
+              measures: {
+                case: node.measures["pnum#SUM"]
+              }
+            })
+          } else if (node.measures["endnum#SUM"] === 0) {
+            pushGraph.edges.push({
+              type: edgeType.Normal,
+              from: startNodeName,
+              to: node.activity,
+              measures: {
+                case: node.measures["pnum#SUM"]
+              }
+            })
+          }
+
+          prevGraph = pushGraph
+          prevNode = node
+        })
+
+        return resList
     })
-  })
+  }, {ready: !!totalCaseData})
   useEffect(() => { // 之所以单独对filterList做监听，是为了能够对其判空，为空且正在添加临时过滤器则不请求接口
     if (!filterList.length && addingFilter) return
 
@@ -185,7 +340,7 @@ export function useProcessData({filterList, addingFilter, componentConfig, alias
   }, [filterList, addingFilter])
 
   return {
-    data,
+    nodeStepList,
     loading,
   }
 }
