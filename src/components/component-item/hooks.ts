@@ -173,6 +173,10 @@ export function useProcessData({filterList, addingFilter, componentConfig, alias
         filters
       }
     })
+      .then(res => {
+        console.log(res)
+        return res
+    })
   })
   useEffect(() => { // 之所以单独对filterList做监听，是为了能够对其判空，为空且正在添加临时过滤器则不请求接口
     if (!filterList.length && addingFilter) return
