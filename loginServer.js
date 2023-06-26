@@ -34,7 +34,7 @@ app.get('/login', async (req, res) => {
     priority: "Medium"})
   console.log("跳转到登录页")
   await page.goto("https://mc.ariscloud.com/login")
-  await page.type("#[projectName]", process.env.tenantName)
+  await page.type("#tenantName", process.env.tenantName)
   await page.click(".login-form button")
   await page.type("#userEmail", process.env.account)
   await page.type("#userPassword", process.env.password)

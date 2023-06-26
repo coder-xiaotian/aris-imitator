@@ -270,7 +270,7 @@ export function useProcessData({filterList, addingFilter, componentConfig, alias
                 case: edge.measures["pnum#SUM"]
               }
             }
-          }).concat(...startEdgeAndEndEdgeList)
+          }).concat(...startEdgeAndEndEdgeList).sort((a, b) => b.measures["case"] - a.measures["case"])
         }
         resList.push(firstGraph)
 
@@ -325,6 +325,7 @@ export function useProcessData({filterList, addingFilter, componentConfig, alias
               }
             })
           }
+          pushGraph.edges = pushGraph.edges.sort((a: any, b: any) => b.measures["case"] - a.measures["case"])
 
           prevGraph = pushGraph
           prevNode = node
