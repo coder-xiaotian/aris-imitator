@@ -11,7 +11,6 @@ import {getColData} from "@/components/component-config-drawer/utils";
 import request from "@/utils/client-request";
 import {calcBucketIntervalVal} from "@/components/component-config-drawer/data-config/bucket";
 import {useContext, useEffect} from "react";
-import {useRouter} from "next/router";
 import {MetaData} from "../../apis/metaInfo";
 import {ProcessData} from "../../apis/process";
 import {DashBoardContext} from "@/components/layouts/dashboard-layout";
@@ -108,13 +107,43 @@ export function useChartData<T = ChartDataResponse["rows"][0]>({filterList, addi
   }
 }
 
-const nodeType = {
-  StartEnd: 1,
-  Normal: 2
+export enum NodeType {
+  StartEnd = "1",
+  Normal = "2"
 }
-const edgeType = {
-  StartEnd: 1,
-  Normal: 2
+export enum StartEndNodeName {
+  Start= "流程开始",
+  End = "流程结束"
+}
+export enum EdgeType {
+  StartEnd = "1",
+  Normal = "2"
+}
+export type NodeInfo = {
+  type: NodeType
+  name: string
+  measure: number,
+  percent?: string,
+  isStart?: boolean,
+  isEnd?: boolean
+  x?: number
+  y?: number
+  width?: string
+  height?: string
+}
+export type EdgeInfo = {
+  type: EdgeType
+  from: string
+  to: string,
+  measure: number,
+  d?: string,
+}
+export type GraphInfo = {
+  nodes: NodeInfo[]
+  edges: EdgeInfo[]
+  viewBox: string
+  width: number
+  height: number
 }
 export function useProcessData({filterList, addingFilter, componentConfig, aliasMap, metaData}: Props) {
   const {datasetId} = useContext(DashBoardContext)
@@ -136,7 +165,7 @@ export function useProcessData({filterList, addingFilter, componentConfig, alias
     }
   }))
   // 获取流程图数据
-  const {data: nodeStepList, loading, run: requestProcessData} = useRequest((filters = []) => {
+  const {data: nodeStepList = [], loading, run: requestProcessData} = useRequest((filters = []) => {
     return request.post<any, ProcessData, any>(`/api/dataSets/${datasetId}/query/processExplorer`, {
       withCommonPath: true,
       nodes: {
@@ -203,56 +232,47 @@ export function useProcessData({filterList, addingFilter, componentConfig, alias
         const resList = []
         const commonPath = res.commonPath
         const startEdgeAndEndEdgeList: any = []
-        const startNodeName = "流程开始"
-        const endNodeName = "流程结束"
-        const firstGraph = {
+        const firstGraph: Omit<GraphInfo, "viewBox" | "width" | "height"> = {
           nodes: [{
-            type: nodeType.StartEnd,
-            name: startNodeName,
-            measures: {
-              case: totalCase,
-            }
-          }, {
-            type: nodeType.StartEnd,
-            name: endNodeName,
-            measures: {
-              case: totalCase,
-            }
+            type: NodeType.StartEnd,
+            name: StartEndNodeName.Start,
+            measure: totalCase,
+          } as NodeInfo, {
+            type: NodeType.StartEnd,
+            name: StartEndNodeName.End,
+            measure: totalCase,
           }].concat(...commonPath.map(name => {
             const nodeData = res.nodes.find(item => item.activity === name)!
             let isStart = true, isEnd = true
-            if (nodeData.measures["startnum#SUM"] === 0) {
+            if (nodeData.measures["startnum#SUM"] === 0 &&
+              nodeData.measures["endnum#SUM"] !== 0) {
+              // 因为开始边和结束边是没有在返回结果里的，所以这里要单独处理
               startEdgeAndEndEdgeList.push({
-                type: edgeType.StartEnd,
+                type: EdgeType.StartEnd,
                 from: nodeData.activity,
-                to: endNodeName,
-                measures: {
-                  case: nodeData.measures["pnum#SUM"]
-                }
+                to: StartEndNodeName.End,
+                measure: nodeData.measures["pnum#SUM"],
               })
               isStart = false
-            }
-            if (nodeData.measures["endnum#SUM"] === 0) {
-              startEdgeAndEndEdgeList.push(nodeData)
+            } else if (nodeData.measures["startnum#SUM"] !== 0 &&
+              nodeData.measures["endnum#SUM"] === 0) {
               startEdgeAndEndEdgeList.push({
-                type: edgeType.StartEnd,
-                from: endNodeName,
+                type: EdgeType.StartEnd,
+                from: StartEndNodeName.Start,
                 to: nodeData.activity,
-                measures: {
-                  case: nodeData.measures["pnum#SUM"]
-                }
+                measure: nodeData.measures["pnum#SUM"]
               })
               isEnd = false
             }
 
+            const percent = Number((nodeData.measures["pnum#SUM"]/totalCase) * 100).toFixed(1) + "%"
             return {
-              type: nodeType.Normal,
+              type: NodeType.Normal,
               name,
-              measures: {
-                case: nodeData.measures["pnum#SUM"],
-                isStart,
-                isEnd,
-              }
+              measure: nodeData.measures["pnum#SUM"],
+              percent,
+              isStart,
+              isEnd,
             }
           })),
           edges: res.edges.filter(edge => {
@@ -263,14 +283,12 @@ export function useProcessData({filterList, addingFilter, componentConfig, alias
             return false
           }).map(edge => {
             return {
-              type: edgeType.Normal,
+              type: EdgeType.Normal,
               from: edge.from,
               to: edge.to,
-              measures: {
-                case: edge.measures["pnum#SUM"]
-              }
+              measure: edge.measures["pnum#SUM"]
             }
-          }).concat(...startEdgeAndEndEdgeList).sort((a, b) => b.measures["case"] - a.measures["case"])
+          }).concat(...startEdgeAndEndEdgeList).sort((a, b) => b.measure - a.measure)
         }
         resList.push(firstGraph)
 
@@ -280,52 +298,46 @@ export function useProcessData({filterList, addingFilter, componentConfig, alias
         let pushGraph: any, prevNode: typeof sortedNode[0], prevGraph = firstGraph
         sortedNode.forEach(node => {
           if (prevNode?.measures["pnum#SUM"] === node.measures["pnum#SUM"]) {
-            pushGraph = prevGraph
+            pushGraph = prevGraph // 这里是处理指标相等的情况，指标相等则放在一个step里
           } else {
             pushGraph = {}
             resList.push(pushGraph)
           }
 
+          const percent = Number((node.measures["pnum#SUM"]/totalCase) * 100).toFixed(1) + "%"
           pushGraph.nodes = [...prevGraph.nodes, {
-            type: nodeType.Normal,
+            type: NodeType.Normal,
             name: node.activity,
-            measures: {
-              case: node.measures["pnum#SUM"],
-            }
+            measure: node.measures["pnum#SUM"],
+            percent
           }]
           pushGraph.edges = [...prevGraph.edges, ...res.edges.filter(edge => {
             const inPrevEdges = prevGraph.edges.find(item => item.from === edge.from && item.to === edge.to)
-            const inPrevNodes = pushGraph.nodes.find((item: any) => item.name === edge.from)
-              && pushGraph.nodes.find((item: any) => item.name === edge.to)
+            const inPrevNodes = pushGraph.nodes.find((item: any) => item.name === edge.from || item.name === edge.to)
             return !inPrevEdges && inPrevNodes
           }).map(edge => ({
-            type: edgeType.Normal,
+            type: EdgeType.Normal,
             from: edge.from,
             to: edge.to,
-            measures: {
-              case: edge.measures["pnum#SUM"]
-            }
+            measure: edge.measures["pnum#SUM"]
           }))]
-          if (node.measures["startnum#SUM"] === 0) {
+          if (node.measures["startnum#SUM"] === 0 && node.measures["endnum#SUM"] !== 0) {
             pushGraph.edges.push({
-              type: edgeType.Normal,
+              type: EdgeType.Normal,
               from: node.activity,
-              to: endNodeName,
-              measures: {
-                case: node.measures["pnum#SUM"]
-              }
+              to: StartEndNodeName.End,
+              measure: node.measures["pnum#SUM"]
             })
-          } else if (node.measures["endnum#SUM"] === 0) {
+          } else if (node.measures["startnum#SUM"] !== 0 &&
+            node.measures["endnum#SUM"] === 0) {
             pushGraph.edges.push({
-              type: edgeType.Normal,
-              from: startNodeName,
+              type: EdgeType.Normal,
+              from: StartEndNodeName.Start,
               to: node.activity,
-              measures: {
-                case: node.measures["pnum#SUM"]
-              }
+              measure: node.measures["pnum#SUM"]
             })
           }
-          pushGraph.edges = pushGraph.edges.sort((a: any, b: any) => b.measures["case"] - a.measures["case"])
+          pushGraph.edges = pushGraph.edges.sort((a: any, b: any) => b.measure - a.measure)
 
           prevGraph = pushGraph
           prevNode = node

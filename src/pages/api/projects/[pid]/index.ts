@@ -13,7 +13,7 @@ export default async function handler(
     res.status(200).json(r.data)
   } catch (e) {
     if (e instanceof AxiosError) {
-      res.status(e.response!.status).json(e.response?.data)
+      res.status(e.response?.status ?? 500).json(e.response?.data)
       return
     }
     res.status(500)

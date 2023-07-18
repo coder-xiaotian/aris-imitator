@@ -69,7 +69,7 @@ export default forwardRef<HTMLDivElement, CardGridProps & GridItemProps>((props,
           <div className="text-lg text-[#605e5c]">{title}</div>
           <div className="text-sm text-[#a19f9d]">{subTitle}</div>
         </div>
-        <div className="flex-grow">
+        <div className="flex-grow min-h-0">
           {children}
         </div>
       </div>

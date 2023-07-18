@@ -18,7 +18,7 @@ export default ({isVariety}: SettingDrawserProps) => {
   }
 
   return (
-    <div className="overflow-hidden absolute right-0 h-full py-2 rounded-t bg-gray-100">
+    <div className="overflow-hidden h-full py-2 rounded-t bg-gray-100">
       {
         isCompact ? (
           <div className="flex flex-col justify-between items-center w-16 h-full">
