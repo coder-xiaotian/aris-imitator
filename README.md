@@ -1,7 +1,7 @@
 # 项目说明
 这是一个模仿ARIS Process Mining（ARIS流程挖掘）的一个前端项目，用于学习其架构思路。数据均通过ARIS线上接口获取。
 
-线上体验地址：http://aris.justcodeit.cn/my_test/analyses/test （第一次访问可能有点慢，因为后台在做模拟登录）
+线上体验地址：https://aris-imitator.vercel.app/my_test/analyses/test （第一次访问可能有点慢，因为后台在做模拟登录）
 
 ## 技术栈
 + next.js
