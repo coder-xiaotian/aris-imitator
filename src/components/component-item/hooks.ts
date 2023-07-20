@@ -128,22 +128,23 @@ export type NodeInfo = {
   isEnd?: boolean
   x?: number
   y?: number
-  width?: string
-  height?: string
+  width?: number
+  height?: number
+  level?: number
 }
 export type EdgeInfo = {
   type: EdgeType
   from: string
   to: string,
-  measure: number,
-  d?: string,
+  measure: number
+  d?: string
+  level?: number
+  labelPos?: [number, number]
 }
 export type GraphInfo = {
   nodes: NodeInfo[]
   edges: EdgeInfo[]
   viewBox: string
-  width: number
-  height: number
 }
 export function useProcessData({filterList, addingFilter, componentConfig, aliasMap, metaData}: Props) {
   const {datasetId} = useContext(DashBoardContext)
@@ -229,6 +230,7 @@ export function useProcessData({filterList, addingFilter, componentConfig, alias
     })
       .then(res => {
         const totalCase = totalCaseData.rows[0][0]
+        const inscrease = (totalCase / 7) + 1
         const resList = []
         const commonPath = res.commonPath
         const startEdgeAndEndEdgeList: any = []
@@ -252,6 +254,7 @@ export function useProcessData({filterList, addingFilter, componentConfig, alias
                 from: nodeData.activity,
                 to: StartEndNodeName.End,
                 measure: nodeData.measures["pnum#SUM"],
+                level: getLevel(nodeData.measures["pnum#SUM"], inscrease)
               })
               isStart = false
             } else if (nodeData.measures["startnum#SUM"] !== 0 &&
@@ -260,7 +263,8 @@ export function useProcessData({filterList, addingFilter, componentConfig, alias
                 type: EdgeType.StartEnd,
                 from: StartEndNodeName.Start,
                 to: nodeData.activity,
-                measure: nodeData.measures["pnum#SUM"]
+                measure: nodeData.measures["pnum#SUM"],
+                level: getLevel(nodeData.measures["pnum#SUM"], inscrease)
               })
               isEnd = false
             }
@@ -273,6 +277,7 @@ export function useProcessData({filterList, addingFilter, componentConfig, alias
               percent,
               isStart,
               isEnd,
+              level: getLevel(nodeData.measures["pnum#SUM"], inscrease)
             }
           })),
           edges: res.edges.filter(edge => {
@@ -286,7 +291,8 @@ export function useProcessData({filterList, addingFilter, componentConfig, alias
               type: EdgeType.Normal,
               from: edge.from,
               to: edge.to,
-              measure: edge.measures["pnum#SUM"]
+              measure: edge.measures["pnum#SUM"],
+              level: getLevel(edge.measures["pnum#SUM"], inscrease)
             }
           }).concat(...startEdgeAndEndEdgeList).sort((a, b) => b.measure - a.measure)
         }
@@ -309,6 +315,7 @@ export function useProcessData({filterList, addingFilter, componentConfig, alias
             type: NodeType.Normal,
             name: node.activity,
             measure: node.measures["pnum#SUM"],
+            level: getLevel(node.measures["pnum#SUM"], inscrease),
             percent
           }]
           pushGraph.edges = [...prevGraph.edges, ...res.edges.filter(edge => {
@@ -319,14 +326,16 @@ export function useProcessData({filterList, addingFilter, componentConfig, alias
             type: EdgeType.Normal,
             from: edge.from,
             to: edge.to,
-            measure: edge.measures["pnum#SUM"]
+            measure: edge.measures["pnum#SUM"],
+            level: getLevel(edge.measures["pnum#SUM"], inscrease)
           }))]
           if (node.measures["startnum#SUM"] === 0 && node.measures["endnum#SUM"] !== 0) {
             pushGraph.edges.push({
               type: EdgeType.Normal,
               from: node.activity,
               to: StartEndNodeName.End,
-              measure: node.measures["pnum#SUM"]
+              measure: node.measures["pnum#SUM"],
+              level: getLevel(node.measures["pnum#SUM"], inscrease)
             })
           } else if (node.measures["startnum#SUM"] !== 0 &&
             node.measures["endnum#SUM"] === 0) {
@@ -334,7 +343,8 @@ export function useProcessData({filterList, addingFilter, componentConfig, alias
               type: EdgeType.Normal,
               from: StartEndNodeName.Start,
               to: node.activity,
-              measure: node.measures["pnum#SUM"]
+              measure: node.measures["pnum#SUM"],
+              level: getLevel(node.measures["pnum#SUM"], inscrease)
             })
           }
           pushGraph.edges = pushGraph.edges.sort((a: any, b: any) => b.measure - a.measure)
@@ -355,5 +365,21 @@ export function useProcessData({filterList, addingFilter, componentConfig, alias
   return {
     nodeStepList,
     loading,
+  }
+}
+
+function getLevel(measure: number, inscrease: number) {
+  if (measure >= 0 && measure < inscrease) {
+    return 1
+  } else if (measure >= inscrease && measure < inscrease * 2) {
+    return 2
+  } else if (measure >= inscrease * 2 && measure < inscrease * 3) {
+    return 3
+  } else if (measure >= inscrease * 3 && measure < inscrease * 4) {
+    return 4
+  } else if (measure >= inscrease * 4 && measure < inscrease * 5) {
+    return 5
+  } else {
+    return 6
   }
 }
