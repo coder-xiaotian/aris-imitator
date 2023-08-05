@@ -39,7 +39,7 @@ export default ({filterList, addingFilter, metaData, aliasMap, componentConfig}:
       const res = graphviz.dot(dotStr, "json")
       const data = layoutDataParser(JSON.parse(res))
       setGraphInfo(data)
-      console.log(dotStr, gData, JSON.parse(res), data)
+      // console.log(dotStr, gData, JSON.parse(res), data)
     })
   }, [nodeStepList])
 
@@ -57,17 +57,20 @@ export default ({filterList, addingFilter, metaData, aliasMap, componentConfig}:
   )
 }
 
+const LeftBadgeWidth = 22
+const RectHeight = 40
+
 function generateDotStr(nodes: NodeInfo[], edges: EdgeInfo[]) {
   return `digraph G {
     ${nodes
     .map((n) => {
-      if (n.name === StartEndNodeName.Start || n.name === StartEndNodeName.End) return `${n.name} [shape="rect",width="1.9696969696969697",fixedSize="true",originName="${n.name}",type=${n.type},measure="${n.measure}"];`;
+      if (n.name === StartEndNodeName.Start || n.name === StartEndNodeName.End) return `${n.name} [shape="rect",width="2",fixedSize="true",originName="${n.name}",type=${n.type},measure="${n.measure}"];`;
 
       const originName = n.name
       const name = originName.replaceAll(" ", "_")
       const width = measureText(n.name + n.percent) / PIXEL_PER_POINT
-      const label = `<<TABLE><TR><TD fixedsize="true" height="40" width="22" PORT="p"></TD><TD fixedsize="true" height="40" width="${width}"> </TD></TR></TABLE>>`
-      return `${name} [label=${label},shape="plaintext",originName="${originName}",measure="${n.measure}",percent="${n.percent}",type=${n.type},isStart=${n.isStart},isEnd=${n.isEnd},rectWidth=${width + 22},rectHeight=40,level=${n.level}];`;
+      const label = `<<TABLE><TR><TD fixedsize="true" height="${RectHeight}" width="${LeftBadgeWidth}" PORT="p"></TD><TD fixedsize="true" height="${RectHeight}" width="${width}"> </TD></TR></TABLE>>`
+      return `${name} [label=${label},shape="plaintext",originName="${originName}",measure="${n.measure}",percent="${n.percent}",type=${n.type},isStart=${n.isStart},isEnd=${n.isEnd},rectWidth=${width + LeftBadgeWidth},rectHeight=${RectHeight},level=${n.level}];`;
     })
     .join("\n")}
     ${edges.map((e) => {
@@ -94,6 +97,7 @@ function layoutDataParser(layoutedJson: any) {
   const [xPt, yPt, widthPt, heightPt] = layoutedJson.bb.split(",")
   const width = widthPt * PIXEL_PER_POINT
   const height = heightPt * PIXEL_PER_POINT
+  const nodeRightWidthMap: { [key: string]: number } = {}
   const retData = {
     viewBox: `${xPt * PIXEL_PER_POINT} ${yPt * PIXEL_PER_POINT} ${width} ${height}`,
     nodes: layoutedJson.objects
@@ -101,8 +105,14 @@ function layoutDataParser(layoutedJson: any) {
         let [x, y] = item.pos.split(",");
         const rectWidth = Number(item.rectWidth)
         const rectHeight = Number(item.rectHeight)
-        x = item.type === NodeType.StartEnd ? Number(x) * PIXEL_PER_POINT : (Number(x) - rectWidth / 2) * PIXEL_PER_POINT
-        y = item.type === NodeType.StartEnd ? (Number(heightPt) - Number(y)) * PIXEL_PER_POINT : (Number(heightPt) - Number(y) - rectHeight / 2) * PIXEL_PER_POINT
+        if (item.type === NodeType.StartEnd) {
+          x = Number(x) * PIXEL_PER_POINT
+          y = (Number(heightPt) - Number(y)) * PIXEL_PER_POINT
+        } else {
+          x = (Number(x) - rectWidth / 2) * PIXEL_PER_POINT
+          y = (Number(heightPt) - Number(y) - rectHeight / 2) * PIXEL_PER_POINT
+        }
+        nodeRightWidthMap[item.originName] = item.rectWidth - LeftBadgeWidth
 
         return {
           type: item.type,
@@ -130,7 +140,7 @@ function layoutDataParser(layoutedJson: any) {
           measure: item.label,
           level: item.level,
           labelPos: [Number(lpX) * PIXEL_PER_POINT, (heightPt - Number(lpY)) * PIXEL_PER_POINT],
-          ...handlePath(item.from, item.to, points, heightPt),
+          ...handlePath(item.from, item.to, points, heightPt, nodeRightWidthMap),
         };
       }) ?? [],
   };
@@ -141,21 +151,71 @@ function handlePath(
   from: string,
   to: string,
   points: Array<number[]>,
-  heightPt: number
+  heightPt: number,
+  nodeRightWidthMap: { [key: string]: number }
 ) {
   const firstPoint = points[0];
+  const secondPoint = points[2]
+  const penultimatePoint = points[points.length - 2]
+  const lastPoint = points[points.length - 1]
   let d,
     selfLoop = from === to;
-  if (selfLoop) {
+  if (selfLoop) { // todo 自循环应该是朝右的一个曲线
     d = `M ${firstPoint[0] * PIXEL_PER_POINT},${(heightPt - firstPoint[1]) * PIXEL_PER_POINT}A 2 1 0 1 1 ${
       firstPoint[0] * PIXEL_PER_POINT
     },${(heightPt - firstPoint[1]) * PIXEL_PER_POINT}`;
   } else {
+    const [ax, ay] = firstPoint
+    const [bx, by] = secondPoint
+    let x = ax, y = ay
+    const height = 10
+    const rightWidth = nodeRightWidthMap[from] + 15
+    const rectTan = Math.abs(height / ((bx - ax > 0 ? rightWidth : LeftBadgeWidth)))
+    const tan = Math.abs((ay - by) / (bx - ax))
+    if (!isNaN(tan)) {
+      if (tan > rectTan) {
+        if (ax < bx && ay > by) { // 第二个点在第一个点右下角
+          y = ay - height
+          x = ((ay - y) / tan) + ax
+        } else if (ax < bx && ay < by) { // 第二个点在第一个点右上角
+          y = ay + height
+          x = (((y - ay) / tan) + ax) - 250
+        } else if (ax > bx && ay < by) { // 第二个点在第一个点左上角
+          y = ay + height
+          x = ((ay - y) / tan) + ax
+        } /* else if (ax > bx && ay > by) { // 第二个点在第一个点左下角
+        y = ay - height
+        x = ((y - ay) / tan) + ax
+      }*/
+      } else {
+        if (ax < bx && ay > by) { // 第二个点在第一个点右下角
+          y = ay - height
+          x = ((ay - y) / tan) + ax
+        } else if (ax < bx && ay < by) { // 第二个点在第一个点右上角
+          x = ax + rightWidth
+          y = tan * (x - ax) + ay
+        } /*else if (ax > bx && ay < by) { // 第二个点在第一个点左上角
+        y = ay + height
+        x = ((ay - y) / tan) + ax
+      } else if (ax > bx && ay > by) { // 第二个点在第一个点左下角
+        y = ay - height
+        x = ((y - ay) / tan) + ax
+      }*/
+      }
+    } else {
+      if (by - ay > 0) { // 第二个点在上面
+        y += height
+      } else {
+        y -= height
+      }
+    }
+    x = x * PIXEL_PER_POINT
+    y = (heightPt - y) * PIXEL_PER_POINT
     d = "M"
-      .concat(String(firstPoint[0] * PIXEL_PER_POINT), ",")
-      .concat(String((heightPt - firstPoint[1]) * PIXEL_PER_POINT), "C")
+      .concat(String(x), ",")
+      .concat(String(y), "C", String(x) + ",", String(y) + " ")
       .concat(
-        points.slice(1).map((p) => {
+        points.slice(2).map((p) => {
           return "".concat(String(p[0] * PIXEL_PER_POINT), ",").concat(`${(heightPt - p[1]) * PIXEL_PER_POINT}`);
         }).join(" ")
       );

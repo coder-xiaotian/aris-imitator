@@ -196,7 +196,7 @@ type EdgeProps = {
 }
 function Edge({info}: EdgeProps) {
   return (
-    <g id={`${info.from}-${info.to}`} markerEnd="url(#e-buck-4)">
+    <g id={`${info.from}-${info.to}`} markerEnd={`url(#e-level-${info.level})`}>
       <path
         d={info.d}
         fill="none" strokeWidth="7px" stroke="transparent"/>
@@ -204,19 +204,19 @@ function Edge({info}: EdgeProps) {
             d={info.d}
             stroke="#a19f9d"
             strokeWidth="5px"
-            strokeDasharray="5,5"
+            // strokeDasharray="5,5"
             opacity="1"
             fill="none"
       />
-      <rect x="957.2232971191406"
-            y="417.1"
+      <rect x={info.labelPos![0]}
+            y={info.labelPos![1]}
             width="37.807952880859375"
             height="18"
             opacity="0.8"
             fill="white"
             stroke="none"
       />
-      <text textAnchor="end"
+      <text
             stroke="none"
             fontWeight="normal"
             fontSize="12px"
