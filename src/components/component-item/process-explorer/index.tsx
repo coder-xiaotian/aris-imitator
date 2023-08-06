@@ -7,9 +7,9 @@ import {
   StartEndNodeName,
   useProcessData
 } from "@/components/component-item/hooks";
-import {ComponentConfig, FilterInfo} from "../../../apis/typing";
+import {Aggregation, ComponentConfig, FilterInfo} from "../../../apis/typing";
 import Wrapper from "@/components/component-item/wrapper";
-import SettingDrawser from "@/components/component-item/process-explorer/setting-drawser";
+import SettingDrawser, {ProcessExplorerConfig} from "@/components/component-item/process-explorer/setting-drawser";
 // @ts-ignore
 import {Graphviz} from "@hpcc-js/wasm/graphviz";
 import {DirGraph} from "@/components/component-item/process-explorer/components";
@@ -24,26 +24,50 @@ type ProcessExplorerProps = {
   addingFilter: boolean
 }
 export default ({filterList, addingFilter, metaData, aliasMap, componentConfig}: ProcessExplorerProps) => {
+  const [config, setConfig] = useState<ProcessExplorerConfig>({
+    isVariety: false,
+    quota: {
+      type: "频率",
+      numberConfig: "case",
+      abbrNum: true,
+      agg: "avg",
+      columnInfo: {
+        key: "activity_per_process_num",
+        description: "每个案例的活动数",
+        aggregationConfig: {
+          defaultAggregation: "avg"
+        } as any
+      }
+    }
+  })
   const {nodeStepList, loading} = useProcessData({filterList, addingFilter, metaData, aliasMap, componentConfig})
 
   const [graphInfo, setGraphInfo] = useState<GraphInfo>({
     viewBox: "",
     nodes: [],
-    edges: []
+    edges: [],
+    percent: "0",
   })
+  const [nodeStepInfo, setNodeStepInfo] = useState<{[key: number]: GraphInfo, nodeMarks: number[]}>({nodeMarks: []})
   useEffect(() => {
     if (!nodeStepList.length) return
+
     const gData = nodeStepList[0]
     Graphviz.load().then((graphviz: Graphviz) => {
-      const dotStr = generateDotStr(gData.nodes, gData.edges)
+      const dotStr = generateDotStr(gData.nodes, gData.edges, gData.percent)
       const res = graphviz.dot(dotStr, "json")
       const data = layoutDataParser(JSON.parse(res))
       setGraphInfo(data)
+      setNodeStepInfo(nodeStepList.reduce((res, item) => {
+        res[item.percent] = item
+        res.nodeMarks.push(item.percent)
+        return res
+      }, {nodeMarks: []} as any))
       // console.log(dotStr, gData, JSON.parse(res), data)
     })
   }, [nodeStepList])
 
-  const [isVariety, setIsVariety] = useState(false)
+  console.log(nodeStepInfo)
 
   return (
     <Wrapper loading={loading}>
@@ -51,7 +75,7 @@ export default ({filterList, addingFilter, metaData, aliasMap, componentConfig}:
         <div className="grow flex justify-center">
           <DirGraph data={graphInfo}/>
         </div>
-        <SettingDrawser isVariety={isVariety}/>
+        <SettingDrawser config={config} onChange={setConfig} nodeMarks={nodeStepInfo.nodeMarks}/>
       </div>
     </Wrapper>
   )
@@ -60,8 +84,9 @@ export default ({filterList, addingFilter, metaData, aliasMap, componentConfig}:
 const LeftBadgeWidth = 22
 const RectHeight = 40
 
-function generateDotStr(nodes: NodeInfo[], edges: EdgeInfo[]) {
+function generateDotStr(nodes: NodeInfo[], edges: EdgeInfo[], percent: string) {
   return `digraph G {
+    graph [percent=${percent}];
     ${nodes
     .map((n) => {
       if (n.name === StartEndNodeName.Start || n.name === StartEndNodeName.End) return `${n.name} [shape="rect",width="2",fixedSize="true",originName="${n.name}",type=${n.type},measure="${n.measure}"];`;
@@ -143,6 +168,7 @@ function layoutDataParser(layoutedJson: any) {
           ...handlePath(item.from, item.to, points, heightPt, nodeRightWidthMap),
         };
       }) ?? [],
+    percent: layoutedJson.percent
   };
   return retData;
 };

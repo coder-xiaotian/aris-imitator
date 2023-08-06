@@ -31,7 +31,7 @@ export default (page: ReactElement) => {
       key: "info",
       btn: (
         <Space>
-          <Button type="primary" size="small" onClick={() => notification.close("info")}>
+          <Button type="primary" size="small" onClick={() => notification.destroy("info")}>
             知道了
           </Button>
         </Space>
@@ -39,7 +39,7 @@ export default (page: ReactElement) => {
     })
 
     return () => {
-      notification.close("info")
+      notification.destroy("info")
     }
   }, [])
 

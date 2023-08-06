@@ -1,11 +1,11 @@
 import Label from "@/components/label";
-import {Button, Input, InputNumber, Radio, Select, Switch} from "antd";
+import {Button, Input, Select, Switch} from "antd";
 import {DeleteOutlined, EditOutlined, PlusOutlined} from "@ant-design/icons";
-import {useContext, useEffect, useState} from "react";
+import {useContext, useMemo, useState} from "react";
 import {Aggregation, AliasMapping, ChartType, ComponentConfig} from "../../../apis/typing";
 import InlineLabel from "@/components/label/inline-label";
 import {DashBoardContext} from "@/components/layouts/dashboard-layout";
-import {ColumnInfo, TableData, ValueType} from "../../../apis/metaInfo";
+import {ColumnInfo} from "../../../apis/metaInfo";
 import AttributeDrawer from "@/components/component-config-drawer/data-config/attribute-drawer";
 import classNames from "classnames";
 import {v4 as uuid} from 'uuid'
@@ -28,50 +28,6 @@ export default ({configing, aliasMap, usedAliases, onChange}: DataConfigProps) =
   const viewState = configing?.viewState
 
   const [openAttrDrawer, setOpenAttrDrawer] = useState<'dimension' | 'measure'>()
-  const [attrMenus, setAttrMenus] = useState<FunComponentProps<typeof AttributeDrawer>['attrMenus']>([])
-  useEffect(() => {
-    if (!metaData || !openAttrDrawer) return
-
-    function getExcludeKeys() {
-      if (openAttrDrawer === 'dimension') { // 把已选的维度排除掉
-        const map = Object.assign({} as Record<string, string>, ...Object.values(aliasMap))
-        return dimensions.map(item => {
-          return map[item.alias]
-        })
-      } else {
-        return []
-      }
-    }
-    const excludeKeys = getExcludeKeys()
-    const excludeTypes: ValueType[] = []
-    if (configing?.type === ChartType.TIME) {  // 时间系列图只保留字段类型为time的字段
-      excludeTypes.push('TIMESPAN', 'TIME_RANGE', 'TEXT', 'DOUBLE', 'LONG')
-    }
-    function getMenus(tableData: TableData, prevTitles: string[] = [], menuList: any[] = []) {
-      const isDist = configing?.type === 'dist' // 直方图将distributable过滤处理
-
-      menuList.push({
-        type: tableData.tableInfo.type,
-        title: tableData.tableInfo.name,
-        subTitle: prevTitles.join('/'),
-        children: tableData.columns.filter(col => {
-          let condition = !col.isInternal && !excludeTypes.includes(col.type) && (
-            col.usage !== 'NONE' ? !excludeKeys.includes(col.usage) : !excludeKeys.includes(col.key)
-          )
-          if (isDist) {
-            condition = condition && col.flags.includes('distributable')
-          }
-          return condition
-        })
-      })
-      for(let item of tableData.children) {
-        getMenus(item, [...prevTitles, tableData.tableInfo.name], menuList)
-      }
-
-      return menuList
-    }
-    setAttrMenus(getMenus(metaData!.rootTable))
-  }, [metaData, openAttrDrawer])
   function handleSelectAttr(col: ColumnInfo) {
     let alias = '', newAliasMap = aliasMap
     // 处理别名映射
@@ -184,6 +140,7 @@ export default ({configing, aliasMap, usedAliases, onChange}: DataConfigProps) =
     setEditAggInfo(undefined)
   }
 
+  const isDist = configing?.type === ChartType.DIST
   // 正在添加维度 || (时间系列图 && 已经配置了一个维度) || (直方图 && 已经配置了一个维度)
   const isAddDimensionDisable = openAttrDrawer === 'dimension'
     || (configing?.type === ChartType.TIME && configing.requestState.dimensions?.length === 1)
@@ -192,7 +149,7 @@ export default ({configing, aliasMap, usedAliases, onChange}: DataConfigProps) =
   const isAddMeasureDisable = openAttrDrawer === 'measure' ||
     (configing?.type === ChartType.TIME && configing.requestState.measureConfigs?.length === 1) ||
     (configing?.type === ChartType.PIE && configing.requestState.measureConfigs?.length === 1) ||
-    (configing?.type === ChartType.DIST && configing.requestState.measureConfigs?.length === 1)
+    (isDist && configing.requestState.measureConfigs?.length === 1)
   // 显示分区
   const isPartitionVisible = configing?.type !== ChartType.TIME && configing?.type !== ChartType.PIE && configing?.type !== ChartType.DIST && configing?.type !== ChartType.GRID
   // 显示排序
@@ -201,6 +158,23 @@ export default ({configing, aliasMap, usedAliases, onChange}: DataConfigProps) =
   const isStackVisible = configing?.type !== ChartType.TIME && configing?.type !== ChartType.PIE && configing?.type !== ChartType.DIST && configing?.type !== ChartType.GRID
   // 显示反转轴
   const isReverseVisible = configing?.type !== ChartType.TIME && configing?.type !== ChartType.PIE && configing?.type !== ChartType.DIST && configing?.type !== ChartType.GRID
+
+  const excludeKeys = useMemo(() => {
+    if (openAttrDrawer === 'dimension') { // 把已选的维度排除掉
+      const map = Object.assign({} as Record<string, string>, ...Object.values(aliasMap))
+      return dimensions.map(item => {
+        return map[item.alias]
+      })
+    } else {
+      return []
+    }
+  }, [aliasMap, dimensions])
+  const excludeTypes = useMemo(() => {
+    if (configing?.type === ChartType.TIME) {  // 时间系列图只保留字段类型为time的字段
+      return ['TIMESPAN', 'TIME_RANGE', 'TEXT', 'DOUBLE', 'LONG']
+    }
+    return []
+  }, [configing?.type])
 
   return (
     <>
@@ -355,9 +329,12 @@ export default ({configing, aliasMap, usedAliases, onChange}: DataConfigProps) =
           draft.requestState.includeNullValues = v
         }))}/>
       </InlineLabel>
-      <AttributeDrawer category={openAttrDrawer}
+      <AttributeDrawer className="left-0 -translate-x-full"
+                       category={openAttrDrawer}
+                       excludeKeys={excludeKeys}
+                       excludeTypes={excludeTypes}
+                       isDist={isDist}
                        onClose={() => setOpenAttrDrawer(undefined)}
-                       attrMenus={attrMenus}
                        onSelect={handleSelectAttr}
       />
       <EditAggDrawer open={!!editAggInfo}

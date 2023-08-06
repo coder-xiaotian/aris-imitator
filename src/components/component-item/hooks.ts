@@ -142,6 +142,7 @@ export type EdgeInfo = {
   labelPos?: [number, number]
 }
 export type GraphInfo = {
+  percent: string
   nodes: NodeInfo[]
   edges: EdgeInfo[]
   viewBox: string
@@ -230,11 +231,17 @@ export function useProcessData({filterList, addingFilter, componentConfig, alias
     })
       .then(res => {
         const totalCase = totalCaseData.rows[0][0]
+        const totalFnum = res.nodes.reduce((res, item) => {
+          res += item.measures["fnum#SUM"]
+          return res
+        }, 0)
         const inscrease = (totalCase / 7) + 1
         const resList = []
         const commonPath = res.commonPath
         const startEdgeAndEndEdgeList: any = []
-        const firstGraph: Omit<GraphInfo, "viewBox" | "width" | "height"> = {
+        let graphFnum = 0
+        const firstGraph: Omit<GraphInfo, "viewBox"> = {
+          percent: "0",
           nodes: [{
             type: NodeType.StartEnd,
             name: StartEndNodeName.Start,
@@ -245,6 +252,7 @@ export function useProcessData({filterList, addingFilter, componentConfig, alias
             measure: totalCase,
           }].concat(...commonPath.map(name => {
             const nodeData = res.nodes.find(item => item.activity === name)!
+            const measure = nodeData.measures["pnum#SUM"]
             let isStart = true, isEnd = true
             if (nodeData.measures["startnum#SUM"] === 0 &&
               nodeData.measures["endnum#SUM"] !== 0) {
@@ -253,8 +261,8 @@ export function useProcessData({filterList, addingFilter, componentConfig, alias
                 type: EdgeType.StartEnd,
                 from: nodeData.activity,
                 to: StartEndNodeName.End,
-                measure: nodeData.measures["pnum#SUM"],
-                level: getLevel(nodeData.measures["pnum#SUM"], inscrease)
+                measure: measure,
+                level: getLevel(measure, inscrease)
               })
               isStart = false
             } else if (nodeData.measures["startnum#SUM"] !== 0 &&
@@ -263,21 +271,22 @@ export function useProcessData({filterList, addingFilter, componentConfig, alias
                 type: EdgeType.StartEnd,
                 from: StartEndNodeName.Start,
                 to: nodeData.activity,
-                measure: nodeData.measures["pnum#SUM"],
-                level: getLevel(nodeData.measures["pnum#SUM"], inscrease)
+                measure: measure,
+                level: getLevel(measure, inscrease)
               })
               isEnd = false
             }
 
-            const percent = Number((nodeData.measures["pnum#SUM"]/totalCase) * 100).toFixed(1) + "%"
+            const percent = Number((measure/totalCase) * 100).toFixed(1) + "%"
+            graphFnum += nodeData.measures["fnum#SUM"]
             return {
               type: NodeType.Normal,
               name,
-              measure: nodeData.measures["pnum#SUM"],
+              measure,
               percent,
               isStart,
               isEnd,
-              level: getLevel(nodeData.measures["pnum#SUM"], inscrease)
+              level: getLevel(measure, inscrease)
             }
           })),
           edges: res.edges.filter(edge => {
@@ -296,6 +305,7 @@ export function useProcessData({filterList, addingFilter, componentConfig, alias
             }
           }).concat(...startEdgeAndEndEdgeList).sort((a, b) => b.measure - a.measure)
         }
+        firstGraph.percent = ((graphFnum / totalFnum) * 100).toFixed(2)
         resList.push(firstGraph)
 
         const sortedNode = res.nodes
@@ -303,19 +313,20 @@ export function useProcessData({filterList, addingFilter, componentConfig, alias
           .sort((a, b) => b.measures["pnum#SUM"] - a.measures["pnum#SUM"])
         let pushGraph: any, prevNode: typeof sortedNode[0], prevGraph = firstGraph
         sortedNode.forEach(node => {
-          if (prevNode?.measures["pnum#SUM"] === node.measures["pnum#SUM"]) {
+          const measure = node.measures["pnum#SUM"]
+          if (prevNode?.measures["pnum#SUM"] === measure) {
             pushGraph = prevGraph // 这里是处理指标相等的情况，指标相等则放在一个step里
           } else {
             pushGraph = {}
             resList.push(pushGraph)
           }
 
-          const percent = Number((node.measures["pnum#SUM"]/totalCase) * 100).toFixed(1) + "%"
+          const percent = Number((measure/totalCase) * 100).toFixed(1) + "%"
           pushGraph.nodes = [...prevGraph.nodes, {
             type: NodeType.Normal,
             name: node.activity,
-            measure: node.measures["pnum#SUM"],
-            level: getLevel(node.measures["pnum#SUM"], inscrease),
+            measure,
+            level: getLevel(measure, inscrease),
             percent
           }]
           pushGraph.edges = [...prevGraph.edges, ...res.edges.filter(edge => {
@@ -334,8 +345,8 @@ export function useProcessData({filterList, addingFilter, componentConfig, alias
               type: EdgeType.Normal,
               from: node.activity,
               to: StartEndNodeName.End,
-              measure: node.measures["pnum#SUM"],
-              level: getLevel(node.measures["pnum#SUM"], inscrease)
+              measure,
+              level: getLevel(measure, inscrease)
             })
           } else if (node.measures["startnum#SUM"] !== 0 &&
             node.measures["endnum#SUM"] === 0) {
@@ -343,12 +354,17 @@ export function useProcessData({filterList, addingFilter, componentConfig, alias
               type: EdgeType.Normal,
               from: StartEndNodeName.Start,
               to: node.activity,
-              measure: node.measures["pnum#SUM"],
-              level: getLevel(node.measures["pnum#SUM"], inscrease)
+              measure,
+              level: getLevel(measure, inscrease)
             })
           }
           pushGraph.edges = pushGraph.edges.sort((a: any, b: any) => b.measure - a.measure)
 
+          graphFnum = pushGraph.nodes.reduce((res: number, item: NodeInfo) => {
+            res += item.measure
+            return res
+          }, 0)
+          pushGraph.percent = ((graphFnum / totalCase) * 100).toFixed(1)
           prevGraph = pushGraph
           prevNode = node
         })

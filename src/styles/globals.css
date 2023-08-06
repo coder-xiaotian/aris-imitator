@@ -112,7 +112,7 @@ div::-webkit-scrollbar-thumb,::-webkit-scrollbar-thumb {
     background-color: #fff;
     color: #000;
 }
-.ant-tooltip-arrow-content::before {
+.ant-tooltip-arrow::before {
     background: #fff !important;
 }
 /**end 重置antd 样式 */
