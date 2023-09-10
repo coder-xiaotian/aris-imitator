@@ -10,7 +10,7 @@ import {
 import {getColData} from "@/components/component-config-drawer/utils";
 import request from "@/utils/client-request";
 import {calcBucketIntervalVal} from "@/components/component-config-drawer/data-config/bucket";
-import {useContext, useEffect} from "react";
+import {useContext, useEffect, useRef} from "react";
 import {MetaData} from "../../apis/metaInfo";
 import {ProcessData} from "../../apis/process";
 import {DashBoardContext} from "@/components/layouts/dashboard-layout";
@@ -22,7 +22,14 @@ type Props = {
   metaData: MetaData
   addingFilter: boolean
 }
-export function useChartData<T = ChartDataResponse["rows"][0]>({filterList, addingFilter, componentConfig, aliasMap, metaData}: Props) {
+
+export function useChartData<T = ChartDataResponse["rows"][0]>({
+                                                                 filterList,
+                                                                 addingFilter,
+                                                                 componentConfig,
+                                                                 aliasMap,
+                                                                 metaData
+                                                               }: Props) {
   const {datasetId} = useContext(DashBoardContext)
 
   // 获取图表的数据
@@ -44,6 +51,7 @@ export function useChartData<T = ChartDataResponse["rows"][0]>({filterList, addi
         }
       }) ?? []
     }
+
     return request.post<any, ChartDataResponse<T>, ComponentRequestInfo>(`/api/dataSets/${datasetId}/query/simple`,
       {
         considerDistinct: false,
@@ -111,14 +119,17 @@ export enum NodeType {
   StartEnd = "1",
   Normal = "2"
 }
+
 export enum StartEndNodeName {
-  Start= "流程开始",
+  Start = "流程开始",
   End = "流程结束"
 }
+
 export enum EdgeType {
   StartEnd = "1",
   Normal = "2"
 }
+
 export type NodeInfo = {
   type: NodeType
   name: string
@@ -147,6 +158,7 @@ export type GraphInfo = {
   edges: EdgeInfo[]
   viewBox: string
 }
+
 export function useProcessData({filterList, addingFilter, componentConfig, aliasMap, metaData}: Props) {
   const {datasetId} = useContext(DashBoardContext)
 
@@ -167,9 +179,10 @@ export function useProcessData({filterList, addingFilter, componentConfig, alias
     }
   }))
   // 获取流程图数据
-  const {data: nodeStepList = [], loading, run: requestProcessData} = useRequest((filters = []) => {
+  const withCommonPathRef = useRef(true)
+  const {data: nodeStepData, loading, run: requestProcessData} = useRequest((filters = []) => {
     return request.post<any, ProcessData, any>(`/api/dataSets/${datasetId}/query/processExplorer`, {
-      withCommonPath: true,
+      withCommonPath: withCommonPathRef.current,
       nodes: {
         activityName: "activity_name",
         measures: [
@@ -261,7 +274,7 @@ export function useProcessData({filterList, addingFilter, componentConfig, alias
                 type: EdgeType.StartEnd,
                 from: nodeData.activity,
                 to: StartEndNodeName.End,
-                measure: measure,
+                measure: nodeData.measures["endnum#SUM"],
                 level: getLevel(measure, inscrease)
               })
               isStart = false
@@ -271,13 +284,13 @@ export function useProcessData({filterList, addingFilter, componentConfig, alias
                 type: EdgeType.StartEnd,
                 from: StartEndNodeName.Start,
                 to: nodeData.activity,
-                measure: measure,
+                measure: nodeData.measures["startnum#SUM"],
                 level: getLevel(measure, inscrease)
               })
               isEnd = false
             }
 
-            const percent = Number((measure/totalCase) * 100).toFixed(1) + "%"
+            const percent = Number((measure / totalCase) * 100).toFixed(1) + "%"
             graphFnum += nodeData.measures["fnum#SUM"]
             return {
               type: NodeType.Normal,
@@ -305,7 +318,7 @@ export function useProcessData({filterList, addingFilter, componentConfig, alias
             }
           }).concat(...startEdgeAndEndEdgeList).sort((a, b) => b.measure - a.measure)
         }
-        firstGraph.percent = ((graphFnum / totalFnum) * 100).toFixed(2)
+        firstGraph.percent = ((graphFnum / totalFnum) * 100).toFixed(1)
         resList.push(firstGraph)
 
         const sortedNode = res.nodes
@@ -320,8 +333,10 @@ export function useProcessData({filterList, addingFilter, componentConfig, alias
             pushGraph = {}
             resList.push(pushGraph)
           }
+          graphFnum += node.measures["fnum#SUM"]
+          pushGraph.percent = ((graphFnum / totalFnum) * 100).toFixed(1)
 
-          const percent = Number((measure/totalCase) * 100).toFixed(1) + "%"
+          const percent = Number((measure / totalCase) * 100).toFixed(1) + "%"
           pushGraph.nodes = [...prevGraph.nodes, {
             type: NodeType.Normal,
             name: node.activity,
@@ -360,18 +375,21 @@ export function useProcessData({filterList, addingFilter, componentConfig, alias
           }
           pushGraph.edges = pushGraph.edges.sort((a: any, b: any) => b.measure - a.measure)
 
-          graphFnum = pushGraph.nodes.reduce((res: number, item: NodeInfo) => {
-            res += item.measure
-            return res
-          }, 0)
-          pushGraph.percent = ((graphFnum / totalCase) * 100).toFixed(1)
           prevGraph = pushGraph
           prevNode = node
         })
 
-        return resList
-    })
-  }, {ready: !!totalCaseData})
+        return {
+          edgePercentIndex: commonPath.length + 1,
+          nodeStepList: resList,
+          withCommon: withCommonPathRef.current,
+        }
+      })
+  }, {
+    ready: !!totalCaseData, onSuccess() {
+      withCommonPathRef.current = false
+    }
+  })
   useEffect(() => { // 之所以单独对filterList做监听，是为了能够对其判空，为空且正在添加临时过滤器则不请求接口
     if (!filterList.length && addingFilter) return
 
@@ -379,7 +397,7 @@ export function useProcessData({filterList, addingFilter, componentConfig, alias
   }, [filterList, addingFilter])
 
   return {
-    nodeStepList,
+    nodeStepData,
     loading,
   }
 }

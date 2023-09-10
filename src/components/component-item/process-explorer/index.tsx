@@ -33,14 +33,18 @@ export default ({filterList, addingFilter, metaData, aliasMap, componentConfig}:
       agg: "avg",
       columnInfo: {
         key: "activity_per_process_num",
+        type: "LONG",
         description: "每个案例的活动数",
         aggregationConfig: {
-          defaultAggregation: "avg"
-        } as any
+          aggregations: [{key: "avg", description: "平均值"}],
+          defaultAggregation: "avg",
+        } as any,
       }
-    }
+    },
+    nodeIndex: 0,
+    edgeIndex: 0,
   })
-  const {nodeStepList, loading} = useProcessData({filterList, addingFilter, metaData, aliasMap, componentConfig})
+  const {nodeStepData, loading} = useProcessData({filterList, addingFilter, metaData, aliasMap, componentConfig})
 
   const [graphInfo, setGraphInfo] = useState<GraphInfo>({
     viewBox: "",
@@ -50,23 +54,40 @@ export default ({filterList, addingFilter, metaData, aliasMap, componentConfig}:
   })
   const [nodeStepInfo, setNodeStepInfo] = useState<{[key: number]: GraphInfo, nodeMarks: number[]}>({nodeMarks: []})
   useEffect(() => {
-    if (!nodeStepList.length) return
+    if (!nodeStepData) return
 
-    const gData = nodeStepList[0]
-    Graphviz.load().then((graphviz: Graphviz) => {
-      const dotStr = generateDotStr(gData.nodes, gData.edges, gData.percent)
-      const res = graphviz.dot(dotStr, "json")
-      const data = layoutDataParser(JSON.parse(res))
-      setGraphInfo(data)
-      setNodeStepInfo(nodeStepList.reduce((res, item) => {
-        res[item.percent] = item
-        res.nodeMarks.push(item.percent)
-        return res
-      }, {nodeMarks: []} as any))
-      // console.log(dotStr, gData, JSON.parse(res), data)
-    })
-  }, [nodeStepList])
+    const {nodeStepList, edgePercentIndex, withCommon} = nodeStepData
+    let gData: Omit<GraphInfo, "viewBox">, edgeData: GraphInfo["edges"]
+    if (withCommon) {
+      gData = nodeStepList[0]
+      edgeData = gData.edges.slice(0, edgePercentIndex)
+      setConfig({...config, nodeIndex: 0, edgeIndex: edgePercentIndex})
+    } else {
+      gData = nodeStepList[config.nodeIndex]
+      edgeData = gData.edges.slice(0, config.edgeIndex)
+    }
+    handleGraphInfo(gData, edgeData)
+    setNodeStepInfo(nodeStepList.reduce((res, item) => {
+      res[item.percent] = item
+      res.nodeMarks.push(Number(item.percent))
+      return res
+    }, {nodeMarks: []} as any))
+  }, [nodeStepData])
+  useEffect(() => {
+    if (!nodeStepData) return
 
+    const {nodeStepList} = nodeStepData
+    const gData = nodeStepList[config.nodeIndex!]
+    const edgeData = gData.edges.slice(0, config.edgeIndex!)
+    handleGraphInfo(gData, edgeData)
+  }, [config.nodeIndex, config. edgeIndex])
+  async function handleGraphInfo(gData: Omit<GraphInfo, "viewBox">, edgeData: GraphInfo["edges"]) {
+    const graphviz: Graphviz = await Graphviz.load()
+    const dotStr = generateDotStr(gData.nodes, edgeData, gData.percent)
+    const res = graphviz.dot(dotStr, "json")
+    const data = layoutDataParser(JSON.parse(res))
+    setGraphInfo(data)
+  }
   console.log(nodeStepInfo)
 
   return (

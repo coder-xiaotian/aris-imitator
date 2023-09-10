@@ -1,16 +1,23 @@
-import {Button, Space, Tooltip, Slider, Segmented, Switch, Select} from "antd";
+import {Button, Segmented, Select, Slider, Space, Switch, Tooltip} from "antd";
 import {
-  ApartmentOutlined, ArrowDownOutlined,
+  ApartmentOutlined,
+  ArrowDownOutlined,
   ControlOutlined,
+  EditOutlined,
   FieldBinaryOutlined,
-  MenuFoldOutlined,
-  MenuUnfoldOutlined, MinusOutlined, PlusOutlined,
   FieldTimeOutlined,
-  InsertRowAboveOutlined, EditOutlined, FunctionOutlined
+  FunctionOutlined,
+  InsertRowAboveOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
+  MinusOutlined,
+  PlusOutlined
 } from "@ant-design/icons";
 import {useState} from "react";
 import classNames from "classnames";
-import AttributeDrawer from "@/components/component-config-drawer/data-config/attribute-drawer";
+import AttributeDrawer, {
+  AggMethodSelectorDrawer
+} from "@/components/component-config-drawer/data-config/attribute-drawer";
 import {createPortal} from "react-dom";
 import {Aggregation} from "../../../apis/typing";
 import {ColumnInfo} from "../../../apis/metaInfo";
@@ -31,10 +38,11 @@ export type ProcessExplorerConfig = {
     columnInfo: Partial<ColumnInfo>
     abbrNum: boolean
   }
+  nodeIndex: number
+  edgeIndex: number
 }
 export default ({config, nodeMarks, onChange}: SettingDrawserProps) => {
   const [isCompact, setIsCompact] = useState(true)
-  const [openQuotaConfig, setOpenQuotaConfig] = useState<"measure" | undefined>()
 
   function toggleView() {
     setIsCompact(!isCompact)
@@ -49,8 +57,13 @@ export default ({config, nodeMarks, onChange}: SettingDrawserProps) => {
               <Button type="text" className="!text-slate-500 !border !border-slate-400"
                       icon={<FieldBinaryOutlined className="text-sky-500"/>}/>
             </Tooltip>
-            <SliderItem className="mt-2" marks={nodeMarks}/>
-            <SliderItem className="mt-2" type="connect" marks={[]}/>
+            <SliderItem className="mt-2"
+                        value={nodeMarks[config.nodeIndex]}
+                        marks={nodeMarks}
+                        onChange={(nodeIndex) => {
+                          onChange({...config, nodeIndex})
+                        }}/>
+            <SliderItem className="mt-2" type="connect" marks={[]} value={0} onChange={() => {}}/>
             <Space direction="vertical">
               <TooltipButton placement="left" title="显示流程面板"
                              icon={<ControlOutlined/>}
@@ -80,7 +93,6 @@ export default ({config, nodeMarks, onChange}: SettingDrawserProps) => {
           </div>
         )
       }
-      {createPortal(<AttributeDrawer category={openQuotaConfig} className="z-10 right-0" exclusionNoAgg exclusionRatio />, document.body)}
     </div>
   )
 }
@@ -92,18 +104,23 @@ type QuotaConfig = {
 }
 
 function QuotaConfig({className, config, onChange}: QuotaConfig) {
+  const [openQuotaConfig, setOpenQuotaConfig] = useState<"measure" | undefined>()
+  const [openMethodConfig, setOpenMethodConfig] = useState(false)
+
   function handleChange(key: string, value: any) {
     onChange({
       ...config,
       [key]: value
     })
   }
+
   const aggInfo = config.columnInfo?.aggregationConfig?.aggregations?.find(agg => agg.key === config.columnInfo?.aggregationConfig?.defaultAggregation)
   const map = {
     "频率": (
       <div className="mt-2">
         <span>数字</span>
-        <Select value={config.numberConfig} onChange={(value) => handleChange("numberConfig", value)} className="!mt-2 w-full" options={[
+        <Select value={config.numberConfig} onChange={(value) => handleChange("numberConfig", value)}
+                className="!mt-2 w-full" options={[
           {value: "case", label: "案例频率"},
           {value: "activity", label: "活动频率"}
         ]}/>
@@ -112,7 +129,9 @@ function QuotaConfig({className, config, onChange}: QuotaConfig) {
     "吞吐量时间": (
       <div className="mt-2">
         <span>聚集</span>
-        <Select className="!mt-2 w-full" value={config.agg} onChange={(value) => handleChange("agg", value)} options={[
+        <Select className="!mt-2 w-full"
+                value={config.agg}
+                onChange={(value) => handleChange("agg", value)} options={[
           {value: "stddev", label: "标准差"},
           {value: "avg", label: "平均值"},
           {value: "median", label: "中位数"},
@@ -130,8 +149,8 @@ function QuotaConfig({className, config, onChange}: QuotaConfig) {
         <div className="inline-flex justify-between items-center w-full">
           <span>{aggInfo?.description}（{config.columnInfo.description}）</span>
           <div>
-            <Button type="text" icon={<EditOutlined />}/>
-            <Button type="text" icon={<FunctionOutlined />}/>
+            <Button type="text" icon={<EditOutlined/>} onClick={() => setOpenQuotaConfig("measure")}/>
+            <Button type="text" icon={<FunctionOutlined/>} onClick={() => setOpenMethodConfig(true)}/>
           </div>
         </div>
       </div>
@@ -144,7 +163,8 @@ function QuotaConfig({className, config, onChange}: QuotaConfig) {
       <div className="pt-1">
         <span>显示</span> - <span>频率</span>
       </div>
-      <Segmented className="!mt-2 border border-gray-500" block value={config.type} onChange={(value: any) => handleChange("type", value)}
+      <Segmented className="!mt-2 border border-gray-500" block value={config.type}
+                 onChange={(value: any) => handleChange("type", value)}
                  options={[{value: "频率", icon: <FieldBinaryOutlined/>}, {
                    value: "吞吐量时间",
                    icon: <FieldTimeOutlined/>
@@ -157,6 +177,28 @@ function QuotaConfig({className, config, onChange}: QuotaConfig) {
         <span>缩写数字</span>
         <Switch checked={config.abbrNum} onChange={(checked) => handleChange("abbrNum", checked)}/>
       </div>
+      {createPortal(<AttributeDrawer category={openQuotaConfig} className="z-10 right-0"
+                                     exclusionNoAgg
+                                     exclusionRatio
+                                     onSelect={(value) => {
+                                       handleChange("columnInfo", value)
+                                       setOpenQuotaConfig(undefined)
+                                     }}
+                                     onClose={() => setOpenQuotaConfig(undefined)}
+      />, document.body)}
+      {createPortal(<AggMethodSelectorDrawer open={openMethodConfig} className="z-10 right-0"
+                                             exclusionNoAgg
+                                             exclusionRatio
+                                             columnInfo={config.columnInfo as any}
+                                             onSelect={(value) => {
+                                               handleChange("columnInfo", {
+                                                 ...config.columnInfo,
+                                                 defaultAggregation: value
+                                               })
+                                               setOpenQuotaConfig(undefined)
+                                             }}
+                                             onClose={() => setOpenMethodConfig(false)}
+      />, document.body)}
     </div>
   )
 }
@@ -176,18 +218,30 @@ type SliderItemProps = {
   className: string
   type?: "activity" | "connect"
   marks: number[]
+  value: number
+  onChange: (index: number) => void
 }
 
-function SliderItem({className, type = "activity", marks}: SliderItemProps) {
+function SliderItem({className, value, type = "activity", marks, onChange}: SliderItemProps) {
+
+  function handleChange(value: number) {
+    onChange(marks.findIndex((n) => n === value))
+  }
+
   return (
     <div className={classNames(["grow flex flex-col items-center justify-between", className])}>
       {type === "activity" ? <span className="shrink-0 inline-block w-4 h-4 rounded-full border border-sky-500"/> :
         <ArrowDownOutlined className="!text-sky-500 text-lg"/>}
-      <Slider vertical className="[&_.ant-slider-rail]:bg-gray-300 [&_.ant-slider-dot]:hidden" step={null}
+      <Slider vertical className="[&_.ant-slider-rail]:bg-gray-300 [&_.ant-slider-dot]:hidden"
+              step={null}
+              value={value}
+              min={marks?.[0]}
               marks={marks.reduce((res, n) => {
                 res[n] = {style: {display: "none"}, label: n}
                 return res
-              }, {} as any)}/>
+              }, {} as any)}
+              onChange={handleChange}
+      />
       <Button.Group className="mt-2" size="small">
         <Button icon={<MinusOutlined/>}/>
         <Button icon={<PlusOutlined/>}/>
