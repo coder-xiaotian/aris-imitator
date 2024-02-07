@@ -243,6 +243,7 @@ export function useProcessData({filterList, addingFilter, componentConfig, alias
       }
     })
       .then(res => {
+        // todo 1. 路径上的百分比怎么算出来； 2. 结合节点滑块加减路径怎么计算
         const totalCase = totalCaseData.rows[0][0]
         const totalFnum = res.nodes.reduce((res, item) => {
           res += item.measures["fnum#SUM"]
@@ -388,7 +389,7 @@ export function useProcessData({filterList, addingFilter, componentConfig, alias
   }, {
     ready: !!totalCaseData, onSuccess() {
       withCommonPathRef.current = false
-    }
+    },
   })
   useEffect(() => { // 之所以单独对filterList做监听，是为了能够对其判空，为空且正在添加临时过滤器则不请求接口
     if (!filterList.length && addingFilter) return

@@ -9,7 +9,7 @@ export default async function handler(
   if (req.method !== 'GET') return
 
   try {
-    const r = await request.get(`https://processmining.ariscloud.com/mining/api/int/tenants/${process.env.tenantName}/projects/${req.query.pid}?locale=zh-CN&apiTag=2340`)
+    const r = await request.get(`https://processmining.ariscloud.com/mining/api/int/tenants/${process.env.tenantName}/projects/${req.query.pid}?locale=zh-CN&apiTag=230A`)
     res.status(200).json(r.data)
   } catch (e) {
     if (e instanceof AxiosError) {

@@ -88,7 +88,7 @@ export default ({filterList, addingFilter, metaData, aliasMap, componentConfig}:
     const data = layoutDataParser(JSON.parse(res))
     setGraphInfo(data)
   }
-  console.log(nodeStepInfo)
+  const edgeMarks = nodeStepInfo[config.nodeIndex]?.edges ?? []
 
   return (
     <Wrapper loading={loading}>
@@ -96,7 +96,7 @@ export default ({filterList, addingFilter, metaData, aliasMap, componentConfig}:
         <div className="grow flex justify-center">
           <DirGraph data={graphInfo}/>
         </div>
-        <SettingDrawser config={config} onChange={setConfig} nodeMarks={nodeStepInfo.nodeMarks}/>
+        <SettingDrawser config={config} onChange={setConfig} nodeMarks={nodeStepInfo.nodeMarks} edgeMarks={edgeMarks}/>
       </div>
     </Wrapper>
   )
