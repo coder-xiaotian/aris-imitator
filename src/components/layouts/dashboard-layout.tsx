@@ -1,8 +1,8 @@
-import {Button, notification, Space, Spin, Switch, Typography} from "antd";
+import {Button, Spin, Switch, Typography} from "antd";
 import {useRequest} from "ahooks";
 import {AnalysisTabInfo, FilterInfo, ProjectInfo} from "../../apis/typing";
 import request from "@/utils/client-request";
-import {createContext, Dispatch, ReactElement, SetStateAction, useEffect, useState} from "react";
+import {createContext, Dispatch, ReactElement, SetStateAction, useEffect, useRef, useState} from "react";
 import {useRouter} from "next/router";
 import classNames from "classnames";
 import {MetaData} from "../../apis/metaInfo";
@@ -23,42 +23,39 @@ export const DashBoardContext = createContext<{
   projectKey: string | undefined,
 }>({} as any)
 export default (page: ReactElement) => {
+  const [tip, setTip] = useState<string|null>("登陆中")
+  const sseRef = useRef<EventSource>()
   useEffect(() => {
-    notification.info({
-      duration: null,
-      message: "信息",
-      description: "第一次访问会有点慢，因为后台在做模拟登录，请耐心等待。",
-      key: "info",
-      btn: (
-        <Space>
-          <Button type="primary" size="small" onClick={() => notification.destroy("info")}>
-            知道了
-          </Button>
-        </Space>
-      )
-    })
-
-    return () => {
-      notification.destroy("info")
+    if (sseRef.current) {
+      return
     }
+
+    sseRef.current = new EventSource("/api/check-token")
+    sseRef.current.addEventListener("message", (e) => {
+      setTip(e.data)
+    })
+    sseRef.current.addEventListener("close", () => {
+      setTip(null)
+      sseRef.current?.close()
+    })
   }, [])
 
   const router = useRouter()
   const {projectKey, aid, tab} = router.query
   // 请求项目信息
   const {data: projectInfo} = useRequest<ProjectInfo, any>(() => request.get(`/api/projects/${projectKey}`), {
-    ready: !!projectKey
+    ready: !!projectKey && !tip
   })
   // 请求tabs数据
   const {data: tabs, loading: loadingTabs} = useRequest<AnalysisTabInfo[], []>(() => request.get(`/api/projects/${projectKey}/analyses/${aid}/tabs`), {
-    ready: !!aid && !!projectInfo,
+    ready: !!aid && !!projectInfo && !tip,
     onSuccess(data) {
       if (tab) return
       router.push(`/${projectKey}/analyses/${aid}?tab=${data?.[0].tabKey}`)
     }
   })
-  const {data: metaData, loading: loadingMetaData} = useRequest<MetaData, []>(() => request.get(`/api/dataSets/${projectInfo?.dataSetId}/metaInfo?locale=zh-CN&apiTag=2340`), {
-    ready: !!projectInfo && !!tabs
+  const {data: metaData, loading: loadingMetaData} = useRequest<MetaData, []>(() => request.get(`/api/dataSets/${projectInfo?.dataSetId}/metaInfo?locale=zh-CN&apiTag=230A`), {
+    ready: !!projectInfo && !!tabs && !tip
   })
   // 过滤器数据
   const [filterList, setFilterList] = useImmer<FilterInfo[]>([])
@@ -67,16 +64,6 @@ export default (page: ReactElement) => {
   const [openAddCom, setOpenAddCom] = useState(false)
   // 处于配置中的过滤器id
   const [configingFilterId, setConfigingFilterId] = useState<string>()
-  // const dashboardValue = useMemo(() => ({ // 这么写心智负担有点儿大，每次加了新状态都忘记添加到依赖列表里去
-  //   isEditMode,
-  //   metaData,
-  //   openAddCom,
-  //   closeAddCom() {setOpenAddCom(false)},
-  //   filterList,
-  //   setFilterList,
-  //   configingFilterId,
-  //   setConfigingFilterId
-  // }), [filterList, isEditMode, metaData, openAddCom, configingFilterId])
   const dashboardValue = {
     isEditMode,
     metaData,
@@ -100,7 +87,7 @@ export default (page: ReactElement) => {
   return (
     <Spin wrapperClassName='[&_.ant-spin-container]:flex [&_.ant-spin-container]:flex-col
                             [&_.ant-spin-container]:h-full w-full h-full bg-gray-200'
-          spinning={loadingTabs || loadingMetaData}>
+          spinning={loadingTabs || loadingMetaData || !!tip} tip={tip}>
       <div className='shrink-0 flex justify-between relative z-10 bg-white w-full h-12 shadow'>
         <ScrollPage>
           {filterList.map((item, i) => {

@@ -14,7 +14,6 @@ const instance = axios.create({
 instance.interceptors.request.use((req) => {
   req.headers!["cookie"] = process.env.accessToken
   if (req.method === "post") {
-    console.log(`设置csrfToken：${process.env.csrfToken}`)
     req.headers!["csrftoken"] = process.env.csrfToken
   }
   return req
@@ -23,22 +22,6 @@ instance.interceptors.response.use((res) => {
   return res
 }, async (error) => {
   console.error("请求错误，url：", error.request.path, "，状态码：", error.response.status)
-
-  if (error.response?.status === 401) {
-    const {accessToken, csrfToken} = (await axios.get(process.env.loginServer!)).data
-    process.env.accessToken = accessToken
-    process.env.csrfToken = csrfToken
-    const {method, path, host, protocol} = error.request
-    console.log(`登录成功后重新发请求：${protocol}//${host}${path}，cookie：${process.env.accessToken}`)
-    const res = await instance[method.toLocaleLowerCase() as "get" | "post"](`${protocol}//${host}${path}`, {
-      headers: {
-        ...headers,
-        "cookie": process.env.accessToken
-      }
-    })
-    console.log("请求重试成功!")
-    return Promise.resolve(res)
-  }
   return Promise.reject(error)
 })
 

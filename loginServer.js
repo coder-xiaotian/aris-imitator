@@ -7,6 +7,13 @@ const app = express()
 const userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36'
 
 app.get('/login', async (req, res) => {
+  res.writeHead(200, {
+    "Content-Type":"text/event-stream",
+    "Cache-Control":"no-cache",
+    "Connection":"keep-alive",
+    "Access-Control-Allow-Origin": '*',
+  });
+
   const browser = await puppeteer.launch({
     headless: true,
     args: [
@@ -19,7 +26,7 @@ app.get('/login', async (req, res) => {
       //   "–single-process" // 单进程运行
     ]
   })
-  console.log("打开了浏览器")
+  res.write("data: 打开无头浏览器\n\n")
 
   const page = (await browser.pages())[0]
   await page.setUserAgent(userAgent)
@@ -32,20 +39,20 @@ app.get('/login', async (req, res) => {
     secure: true,
     sameSite: "Lax",
     priority: "Medium"})
-  console.log("跳转到登录页")
+  res.write("data: 进入登陆页面\n\n")
   await page.goto("https://mc.ariscloud.com/login")
   await page.type("#tenantName", process.env.tenantName)
   await page.click(".login-form button")
   await page.type("#userEmail", process.env.account)
   await page.type("#userPassword", process.env.password)
-  console.log("等待登录")
+  res.write("data: 正在登录\n\n")
   let csrfToken
   await Promise.all([
     page.waitForResponse(async response => {
       const status = response.url().endsWith("/service/login") && response.status() === 200
       if (status) {
         csrfToken = (await response.json()).csrfToken
-        console.log("登录成功！csrfToken为：", csrfToken)
+        res.write("data: 登录成功！\n\n")
       }
       return status
     }),
@@ -56,7 +63,8 @@ app.get('/login', async (req, res) => {
   await page.close()
   await browser.close()
 
-  res.json({accessToken: cookieStr, csrfToken})
+  res.write(`event: token\n`)
+  res.write(`data: ${JSON.stringify({accessToken: cookieStr, csrfToken})}\n\n`)
 })
 
 app.listen(8000, () => {

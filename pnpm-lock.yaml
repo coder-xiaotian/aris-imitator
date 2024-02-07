@@ -4,6 +4,7 @@ specifiers:
   '@ant-design/cssinjs': ^1.16.1
   '@ant-design/icons': ^4.7.0
   '@hpcc-js/wasm': ^2.13.0
+  '@types/eventsource': ^1.1.15
   '@types/express': ^4.17.17
   '@types/lodash': ^4.14.191
   '@types/node': 18.11.2
@@ -22,6 +23,7 @@ specifiers:
   eslint: 8.25.0
   eslint-config-next: 12.3.1
   eslint-config-prettier: ^8.6.0
+  eventsource: ^2.0.2
   express: ^4.18.2
   immer: ^9.0.16
   lodash: ^4.17.21
@@ -45,6 +47,7 @@ dependencies:
   '@ant-design/cssinjs': 1.16.1_react-dom@18.2.0+react@18.2.0
   '@ant-design/icons': 4.7.0_react-dom@18.2.0+react@18.2.0
   '@hpcc-js/wasm': 2.13.0
+  '@types/eventsource': 1.1.15
   '@types/express': 4.17.17
   ahooks: 3.7.2_react@18.2.0
   antd: 5.8.2_4879ac6094ec2e12a098ba552f300ba8
@@ -53,6 +56,7 @@ dependencies:
   dotenv: 16.0.3
   echarts: 5.4.0
   eslint-config-prettier: 8.6.0_eslint@8.25.0
+  eventsource: 2.0.2
   express: 4.18.2
   immer: 9.0.16
   lodash: 4.17.21
@@ -563,6 +567,10 @@ packages:
     resolution: {integrity: sha512-cdeYyv4KWoEgpBISTxWvqYsVy444DOqehiF3fM3ne10AmJ62RSyNkUnxMJXHQWRQQX2eR94m5y1IZyDwBjV9FQ==}
     dependencies:
       '@types/node': 18.11.2
+    dev: false
+
+  /@types/eventsource/1.1.15:
+    resolution: {integrity: sha512-XQmGcbnxUNa06HR3VBVkc9+A2Vpi9ZyLJcdS5dwaQQ/4ZMWFO+5c90FnMUpbtMZwB/FChoYHwuVg8TvkECacTA==}
     dev: false
 
   /@types/express-serve-static-core/4.17.33:
@@ -1697,6 +1705,11 @@ packages:
   /etag/1.8.1:
     resolution: {integrity: sha512-aIL5Fx7mawVa300al2BnEE4iNvo1qETxLrPI/o05L7z6go7fCw1J6EQmbK4FmJ2AS7kgVF/KEZWufBfdClMcPg==}
     engines: {node: '>= 0.6'}
+    dev: false
+
+  /eventsource/2.0.2:
+    resolution: {integrity: sha512-IzUmBGPR3+oUG9dUeXynyNmf91/3zUSJg1lCktzKw47OXuhco54U3r9B7O4XX+Rb1Itm9OZ2b0RkTs10bICOxA==}
+    engines: {node: '>=12.0.0'}
     dev: false
 
   /express/4.18.2:
